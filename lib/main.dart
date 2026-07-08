@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-
-import 'core/constants/color.dart';
-import 'core/constants/font.dart';
+import 'package:mople_mobile/core/constants/color.dart';
+import 'package:mople_mobile/core/constants/font.dart';
+import 'package:mople_mobile/presentation/pages/app_start_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -27,9 +27,8 @@ class MyApp extends StatelessWidget {
         ),
         scaffoldBackgroundColor: AppColors.surfacePage,
       ),
-      home: const Scaffold(
-        body: Center(child: Text('어디가남', style: AppTextStyle.h2)),
-      ),
+      debugShowCheckedModeBanner: false,
+      home: const AppStartPage(),
     );
   }
 }
