@@ -17,6 +17,7 @@ class AppButton extends StatelessWidget {
     this.variant = AppButtonVariant.primary,
     this.size = AppButtonSize.md,
     this.leading,
+    this.width,
   });
 
   final String label;
@@ -24,6 +25,7 @@ class AppButton extends StatelessWidget {
   final AppButtonVariant variant;
   final AppButtonSize size;
   final Widget? leading;
+  final double? width;
 
   bool get _disabled => onPressed == null;
 
@@ -45,16 +47,23 @@ class AppButton extends StatelessWidget {
         onTap: onPressed,
         borderRadius: AppRadius.radiusMd,
         child: Container(
+          width: width,
           height: metrics.height,
           padding: EdgeInsets.symmetric(horizontal: metrics.horizontalPadding),
           decoration: BoxDecoration(
             borderRadius: AppRadius.radiusMd,
-            border: border != null ? Border.all(color: border, width: 1.5) : null,
+            border: border != null
+                ? Border.all(color: border, width: 1.5)
+                : null,
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (leading != null) ...[leading!, const SizedBox(width: AppSpacing.space2)],
+              if (leading != null) ...[
+                leading!,
+                const SizedBox(width: AppSpacing.space2),
+              ],
               Text(
                 label,
                 style: metrics.textStyle.copyWith(
@@ -73,7 +82,11 @@ class AppButton extends StatelessWidget {
 }
 
 class _AppButtonColors {
-  const _AppButtonColors({required this.background, required this.foreground, this.border});
+  const _AppButtonColors({
+    required this.background,
+    required this.foreground,
+    this.border,
+  });
 
   final Color background;
   final Color foreground;
@@ -82,11 +95,20 @@ class _AppButtonColors {
   static _AppButtonColors forVariant(AppButtonVariant variant) {
     switch (variant) {
       case AppButtonVariant.primary:
-        return const _AppButtonColors(background: AppColors.brandPrimary, foreground: AppColors.textOnBrand);
+        return const _AppButtonColors(
+          background: AppColors.brandPrimary,
+          foreground: AppColors.textOnBrand,
+        );
       case AppButtonVariant.secondary:
-        return const _AppButtonColors(background: AppColors.brandSecondary, foreground: AppColors.textOnBrand);
+        return const _AppButtonColors(
+          background: AppColors.brandSecondary,
+          foreground: AppColors.textOnBrand,
+        );
       case AppButtonVariant.accent:
-        return const _AppButtonColors(background: AppColors.brandAccent, foreground: AppColors.textPrimary);
+        return const _AppButtonColors(
+          background: AppColors.brandAccent,
+          foreground: AppColors.textPrimary,
+        );
       case AppButtonVariant.outline:
         return const _AppButtonColors(
           background: Colors.transparent,
@@ -94,15 +116,25 @@ class _AppButtonColors {
           border: AppColors.borderBrand,
         );
       case AppButtonVariant.ghost:
-        return const _AppButtonColors(background: Colors.transparent, foreground: AppColors.textPrimary);
+        return const _AppButtonColors(
+          background: Colors.transparent,
+          foreground: AppColors.textPrimary,
+        );
       case AppButtonVariant.danger:
-        return const _AppButtonColors(background: AppColors.danger, foreground: AppColors.textOnBrand);
+        return const _AppButtonColors(
+          background: AppColors.danger,
+          foreground: AppColors.textOnBrand,
+        );
     }
   }
 }
 
 class _AppButtonMetrics {
-  const _AppButtonMetrics({required this.height, required this.horizontalPadding, required this.textStyle});
+  const _AppButtonMetrics({
+    required this.height,
+    required this.horizontalPadding,
+    required this.textStyle,
+  });
 
   final double height;
   final double horizontalPadding;
@@ -111,11 +143,23 @@ class _AppButtonMetrics {
   static _AppButtonMetrics forSize(AppButtonSize size) {
     switch (size) {
       case AppButtonSize.sm:
-        return const _AppButtonMetrics(height: 32, horizontalPadding: AppSpacing.space3, textStyle: AppTextStyle.caption);
+        return const _AppButtonMetrics(
+          height: 32,
+          horizontalPadding: AppSpacing.space3,
+          textStyle: AppTextStyle.caption,
+        );
       case AppButtonSize.md:
-        return const _AppButtonMetrics(height: 40, horizontalPadding: AppSpacing.space4, textStyle: AppTextStyle.body);
+        return const _AppButtonMetrics(
+          height: 40,
+          horizontalPadding: AppSpacing.space4,
+          textStyle: AppTextStyle.body,
+        );
       case AppButtonSize.lg:
-        return const _AppButtonMetrics(height: 48, horizontalPadding: AppSpacing.space5, textStyle: AppTextStyle.bodyLg);
+        return const _AppButtonMetrics(
+          height: 54,
+          horizontalPadding: AppSpacing.space5,
+          textStyle: AppTextStyle.bodyLg,
+        );
     }
   }
 }
