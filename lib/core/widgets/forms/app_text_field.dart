@@ -34,6 +34,14 @@ class AppTextFormField extends StatefulWidget {
 class _AppTextFormFieldState extends State<AppTextFormField> {
   late bool _obscureText = widget.obscureText;
 
+  @override
+  void didUpdateWidget(covariant AppTextFormField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.obscureText != oldWidget.obscureText) {
+      _obscureText = widget.obscureText;
+    }
+  }
+
   void _toggleObscureText() => setState(() => _obscureText = !_obscureText);
 
   static OutlineInputBorder _outline(Color color, {double width = 1}) =>
