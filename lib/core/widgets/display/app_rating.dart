@@ -5,6 +5,12 @@ import '../../constants/font.dart';
 import '../../constants/spacing.dart';
 
 class AppRating extends StatelessWidget {
+  final double value;
+  final bool showValue;
+  final int? count;
+  final int starCount;
+  final double starSize;
+
   const AppRating({
     super.key,
     required this.value,
@@ -13,12 +19,6 @@ class AppRating extends StatelessWidget {
     this.starCount = 5,
     this.starSize = 16,
   });
-
-  final double value;
-  final bool showValue;
-  final int? count;
-  final int starCount;
-  final double starSize;
 
   @override
   Widget build(BuildContext context) {
@@ -62,8 +62,9 @@ class AppRating extends StatelessWidget {
 }
 
 class _FractionalClipper extends CustomClipper<Rect> {
-  _FractionalClipper(this.fraction);
   final double fraction;
+
+  _FractionalClipper(this.fraction);
 
   @override
   Rect getClip(Size size) => Rect.fromLTWH(0, 0, size.width * fraction, size.height);

@@ -6,10 +6,10 @@ import '../../constants/radius.dart';
 import '../../constants/spacing.dart';
 
 class AppTooltip extends StatelessWidget {
-  const AppTooltip({super.key, required this.label, required this.child});
-
   final String label;
   final Widget child;
+
+  const AppTooltip({super.key, required this.label, required this.child});
 
   @override
   Widget build(BuildContext context) {

@@ -9,16 +9,16 @@ import '../../constants/spacing.dart';
 enum AppToastTone { success, warning, danger, info }
 
 class AppToast extends StatelessWidget {
+  final String title;
+  final String message;
+  final AppToastTone tone;
+
   const AppToast({
     super.key,
     required this.title,
     required this.message,
     this.tone = AppToastTone.info,
   });
-
-  final String title;
-  final String message;
-  final AppToastTone tone;
 
   static void show(
     BuildContext context, {

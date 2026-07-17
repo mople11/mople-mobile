@@ -6,16 +6,16 @@ import '../../constants/radius.dart';
 import '../../constants/spacing.dart';
 
 class AppDialog extends StatelessWidget {
+  final String title;
+  final String? description;
+  final List<Widget> actions;
+
   const AppDialog({
     super.key,
     required this.title,
     this.description,
     this.actions = const [],
   });
-
-  final String title;
-  final String? description;
-  final List<Widget> actions;
 
   static Future<T?> show<T>(
     BuildContext context, {

@@ -6,16 +6,16 @@ import '../../constants/shadow.dart';
 import '../../constants/spacing.dart';
 
 class AppCard extends StatelessWidget {
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+  final bool elevated;
+
   const AppCard({
     super.key,
     required this.child,
     this.padding = const EdgeInsets.all(AppSpacing.space6),
     this.elevated = true,
   });
-
-  final Widget child;
-  final EdgeInsetsGeometry padding;
-  final bool elevated;
 
   @override
   Widget build(BuildContext context) {

@@ -6,6 +6,13 @@ import '../../constants/radius.dart';
 import '../../constants/spacing.dart';
 
 class FilterPill extends StatelessWidget {
+  final String label;
+  final bool active;
+  final bool hasDropdown;
+  final int? count;
+  final String? icon;
+  final VoidCallback? onTap;
+
   const FilterPill({
     super.key,
     required this.label,
@@ -15,13 +22,6 @@ class FilterPill extends StatelessWidget {
     this.icon,
     this.onTap,
   });
-
-  final String label;
-  final bool active;
-  final bool hasDropdown;
-  final int? count;
-  final String? icon;
-  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {

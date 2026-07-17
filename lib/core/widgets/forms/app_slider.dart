@@ -4,6 +4,13 @@ import '../../constants/color.dart';
 import '../../constants/font.dart';
 
 class AppSlider extends StatelessWidget {
+  final String label;
+  final double value;
+  final double min;
+  final double max;
+  final ValueChanged<double>? onChanged;
+  final String Function(double value)? formatValue;
+
   const AppSlider({
     super.key,
     required this.label,
@@ -13,13 +20,6 @@ class AppSlider extends StatelessWidget {
     this.onChanged,
     this.formatValue,
   });
-
-  final String label;
-  final double value;
-  final double min;
-  final double max;
-  final ValueChanged<double>? onChanged;
-  final String Function(double value)? formatValue;
 
   @override
   Widget build(BuildContext context) {

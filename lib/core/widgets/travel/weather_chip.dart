@@ -8,10 +8,10 @@ import '../../constants/spacing.dart';
 enum WeatherCondition { sunny, rain, cloud, wind }
 
 class WeatherChip extends StatelessWidget {
-  const WeatherChip({super.key, required this.condition, required this.temp});
-
   final WeatherCondition condition;
   final int temp;
+
+  const WeatherChip({super.key, required this.condition, required this.temp});
 
   IconData get _icon => switch (condition) {
         WeatherCondition.sunny => Icons.wb_sunny_rounded,

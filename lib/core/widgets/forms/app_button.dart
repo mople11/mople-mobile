@@ -10,6 +10,13 @@ enum AppButtonVariant { primary, secondary, accent, outline, ghost, danger }
 enum AppButtonSize { sm, md, lg }
 
 class AppButton extends StatelessWidget {
+  final String label;
+  final VoidCallback? onPressed;
+  final AppButtonVariant variant;
+  final AppButtonSize size;
+  final Widget? leading;
+  final double? width;
+
   const AppButton({
     super.key,
     required this.label,
@@ -19,13 +26,6 @@ class AppButton extends StatelessWidget {
     this.leading,
     this.width,
   });
-
-  final String label;
-  final VoidCallback? onPressed;
-  final AppButtonVariant variant;
-  final AppButtonSize size;
-  final Widget? leading;
-  final double? width;
 
   bool get _disabled => onPressed == null;
 
@@ -82,15 +82,15 @@ class AppButton extends StatelessWidget {
 }
 
 class _AppButtonColors {
+  final Color background;
+  final Color foreground;
+  final Color? border;
+
   const _AppButtonColors({
     required this.background,
     required this.foreground,
     this.border,
   });
-
-  final Color background;
-  final Color foreground;
-  final Color? border;
 
   static _AppButtonColors forVariant(AppButtonVariant variant) {
     switch (variant) {
@@ -130,15 +130,15 @@ class _AppButtonColors {
 }
 
 class _AppButtonMetrics {
+  final double height;
+  final double horizontalPadding;
+  final TextStyle textStyle;
+
   const _AppButtonMetrics({
     required this.height,
     required this.horizontalPadding,
     required this.textStyle,
   });
-
-  final double height;
-  final double horizontalPadding;
-  final TextStyle textStyle;
 
   static _AppButtonMetrics forSize(AppButtonSize size) {
     switch (size) {

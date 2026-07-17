@@ -6,16 +6,16 @@ import '../../constants/font.dart';
 enum AppAvatarSize { sm, md, lg }
 
 class AppAvatar extends StatelessWidget {
+  final String name;
+  final AppAvatarSize size;
+  final bool ring;
+
   const AppAvatar({
     super.key,
     required this.name,
     this.size = AppAvatarSize.md,
     this.ring = false,
   });
-
-  final String name;
-  final AppAvatarSize size;
-  final bool ring;
 
   double get _dimension => switch (size) {
         AppAvatarSize.sm => 32,

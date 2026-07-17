@@ -6,6 +6,12 @@ import 'app_button.dart' show AppButtonSize;
 enum AppIconButtonVariant { solid, soft, outline, ghost }
 
 class AppIconButton extends StatelessWidget {
+  final Widget icon;
+  final String semanticLabel;
+  final VoidCallback? onPressed;
+  final AppIconButtonVariant variant;
+  final AppButtonSize size;
+
   const AppIconButton({
     super.key,
     required this.icon,
@@ -14,12 +20,6 @@ class AppIconButton extends StatelessWidget {
     this.variant = AppIconButtonVariant.soft,
     this.size = AppButtonSize.md,
   });
-
-  final Widget icon;
-  final String semanticLabel;
-  final VoidCallback? onPressed;
-  final AppIconButtonVariant variant;
-  final AppButtonSize size;
 
   double get _dimension => switch (size) {
         AppButtonSize.sm => 32,
