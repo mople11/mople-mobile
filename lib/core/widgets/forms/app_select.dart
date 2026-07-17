@@ -6,6 +6,12 @@ import '../../constants/radius.dart';
 import '../../constants/spacing.dart';
 
 class AppSelect extends StatelessWidget {
+  final String? label;
+  final String? placeholder;
+  final List<String> options;
+  final String? value;
+  final ValueChanged<String?>? onChanged;
+
   const AppSelect({
     super.key,
     this.label,
@@ -14,12 +20,6 @@ class AppSelect extends StatelessWidget {
     this.value,
     this.onChanged,
   });
-
-  final String? label;
-  final String? placeholder;
-  final List<String> options;
-  final String? value;
-  final ValueChanged<String?>? onChanged;
 
   @override
   Widget build(BuildContext context) {

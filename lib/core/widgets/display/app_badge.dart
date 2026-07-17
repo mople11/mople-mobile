@@ -10,16 +10,16 @@ export '../../constants/tone.dart' show AppTone;
 enum AppBadgeVariant { solid, soft }
 
 class AppBadge extends StatelessWidget {
+  final String label;
+  final AppTone tone;
+  final AppBadgeVariant variant;
+
   const AppBadge({
     super.key,
     required this.label,
     this.tone = AppTone.blue,
     this.variant = AppBadgeVariant.soft,
   });
-
-  final String label;
-  final AppTone tone;
-  final AppBadgeVariant variant;
 
   @override
   Widget build(BuildContext context) {

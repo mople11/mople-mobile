@@ -10,6 +10,17 @@ import '../display/app_rating.dart';
 import 'weather_chip.dart';
 
 class DestinationCard extends StatelessWidget {
+  final String image;
+  final String title;
+  final String region;
+  final double rating;
+  final int reviewCount;
+  final String duration;
+  final String? badge;
+  final ({WeatherCondition condition, int temp})? weather;
+  final List<String> tags;
+  final VoidCallback? onTap;
+
   const DestinationCard({
     super.key,
     required this.image,
@@ -23,17 +34,6 @@ class DestinationCard extends StatelessWidget {
     this.tags = const [],
     this.onTap,
   });
-
-  final String image;
-  final String title;
-  final String region;
-  final double rating;
-  final int reviewCount;
-  final String duration;
-  final String? badge;
-  final ({WeatherCondition condition, int temp})? weather;
-  final List<String> tags;
-  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {

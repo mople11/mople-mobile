@@ -5,16 +5,16 @@ import '../../constants/font.dart';
 import '../../constants/spacing.dart';
 
 class AppCheckbox extends StatelessWidget {
+  final String label;
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+
   const AppCheckbox({
     super.key,
     required this.label,
     required this.value,
     this.onChanged,
   });
-
-  final String label;
-  final bool value;
-  final ValueChanged<bool>? onChanged;
 
   @override
   Widget build(BuildContext context) {

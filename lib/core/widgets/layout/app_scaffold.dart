@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
 
 class AppScaffold extends StatelessWidget {
+  final Widget body;
+  final PreferredSizeWidget? appBar;
+  final Color? backgroundColor;
+  final Widget? bottomNavigationBar;
+  final Widget? floatingActionButton;
+  final bool? resizeToAvoidBottomInset;
+
   const AppScaffold({
     super.key,
     required this.body,
@@ -10,13 +17,6 @@ class AppScaffold extends StatelessWidget {
     this.floatingActionButton,
     this.resizeToAvoidBottomInset,
   });
-
-  final Widget body;
-  final PreferredSizeWidget? appBar;
-  final Color? backgroundColor;
-  final Widget? bottomNavigationBar;
-  final Widget? floatingActionButton;
-  final bool? resizeToAvoidBottomInset;
 
   @override
   Widget build(BuildContext context) {

@@ -6,6 +6,11 @@ import '../../constants/radius.dart';
 import '../../constants/spacing.dart';
 
 class AppRadio<T> extends StatelessWidget {
+  final String label;
+  final T value;
+  final T? groupValue;
+  final ValueChanged<T>? onChanged;
+
   const AppRadio({
     super.key,
     required this.label,
@@ -13,11 +18,6 @@ class AppRadio<T> extends StatelessWidget {
     required this.groupValue,
     this.onChanged,
   });
-
-  final String label;
-  final T value;
-  final T? groupValue;
-  final ValueChanged<T>? onChanged;
 
   @override
   Widget build(BuildContext context) {

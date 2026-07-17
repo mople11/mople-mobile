@@ -6,15 +6,20 @@ import '../../constants/radius.dart';
 import '../../constants/spacing.dart';
 
 class MoodOption {
-  const MoodOption({required this.value, required this.label, required this.emoji, required this.description});
-
   final String value;
   final String label;
   final String emoji;
   final String description;
+
+  const MoodOption({required this.value, required this.label, required this.emoji, required this.description});
 }
 
 class MoodSelector extends StatelessWidget {
+  final List<MoodOption> options;
+  final String? value;
+  final int columns;
+  final ValueChanged<String>? onChanged;
+
   const MoodSelector({
     super.key,
     required this.options,
@@ -22,11 +27,6 @@ class MoodSelector extends StatelessWidget {
     this.columns = 4,
     this.onChanged,
   });
-
-  final List<MoodOption> options;
-  final String? value;
-  final int columns;
-  final ValueChanged<String>? onChanged;
 
   @override
   Widget build(BuildContext context) {

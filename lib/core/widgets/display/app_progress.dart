@@ -7,6 +7,11 @@ import '../../constants/spacing.dart';
 import '../../constants/tone.dart';
 
 class AppProgress extends StatelessWidget {
+  final int value;
+  final int max;
+  final AppTone tone;
+  final bool showLabel;
+
   const AppProgress({
     super.key,
     required this.value,
@@ -14,11 +19,6 @@ class AppProgress extends StatelessWidget {
     this.tone = AppTone.blue,
     this.showLabel = false,
   });
-
-  final int value;
-  final int max;
-  final AppTone tone;
-  final bool showLabel;
 
   @override
   Widget build(BuildContext context) {

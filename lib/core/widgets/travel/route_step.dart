@@ -5,6 +5,13 @@ import '../../constants/font.dart';
 import '../../constants/spacing.dart';
 
 class RouteStep extends StatelessWidget {
+  final int index;
+  final String title;
+  final String time;
+  final String duration;
+  final String transport;
+  final bool isLast;
+
   const RouteStep({
     super.key,
     required this.index,
@@ -14,13 +21,6 @@ class RouteStep extends StatelessWidget {
     required this.transport,
     this.isLast = false,
   });
-
-  final int index;
-  final String title;
-  final String time;
-  final String duration;
-  final String transport;
-  final bool isLast;
 
   @override
   Widget build(BuildContext context) {

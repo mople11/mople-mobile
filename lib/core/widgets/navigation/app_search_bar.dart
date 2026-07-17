@@ -6,6 +6,11 @@ import '../../constants/radius.dart';
 import '../../constants/spacing.dart';
 
 class AppSearchBar extends StatelessWidget {
+  final String? placeholder;
+  final TextEditingController? controller;
+  final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onSubmitted;
+
   const AppSearchBar({
     super.key,
     this.placeholder,
@@ -13,11 +18,6 @@ class AppSearchBar extends StatelessWidget {
     this.onChanged,
     this.onSubmitted,
   });
-
-  final String? placeholder;
-  final TextEditingController? controller;
-  final ValueChanged<String>? onChanged;
-  final ValueChanged<String>? onSubmitted;
 
   @override
   Widget build(BuildContext context) {

@@ -6,6 +6,11 @@ import '../../constants/radius.dart';
 import '../../constants/spacing.dart';
 
 class AppTag extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback? onTap;
+  final VoidCallback? onRemove;
+
   const AppTag({
     super.key,
     required this.label,
@@ -13,11 +18,6 @@ class AppTag extends StatelessWidget {
     this.onTap,
     this.onRemove,
   });
-
-  final String label;
-  final bool selected;
-  final VoidCallback? onTap;
-  final VoidCallback? onRemove;
 
   @override
   Widget build(BuildContext context) {

@@ -8,6 +8,11 @@ import '../../constants/spacing.dart';
 enum AppTabsVariant { underline, pill }
 
 class AppTabs extends StatelessWidget {
+  final List<String> items;
+  final int selectedIndex;
+  final ValueChanged<int>? onChanged;
+  final AppTabsVariant variant;
+
   const AppTabs({
     super.key,
     required this.items,
@@ -15,11 +20,6 @@ class AppTabs extends StatelessWidget {
     this.onChanged,
     this.variant = AppTabsVariant.underline,
   });
-
-  final List<String> items;
-  final int selectedIndex;
-  final ValueChanged<int>? onChanged;
-  final AppTabsVariant variant;
 
   @override
   Widget build(BuildContext context) {
