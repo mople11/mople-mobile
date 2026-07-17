@@ -15,7 +15,7 @@ class AppStartPage extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         image: DecorationImage(
-          image: const AssetImage('assets/images/sea.png'),
+          image: const AssetImage('assets/images/png/sea.png'),
           fit: BoxFit.cover,
           colorFilter: ColorFilter.mode(
             AppColors.neutral900.withValues(alpha: 0.3),
