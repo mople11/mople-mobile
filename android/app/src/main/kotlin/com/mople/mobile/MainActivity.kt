@@ -1,4 +1,4 @@
-package com.example.mople_mobile
+package com.mople.mobile
 
 import io.flutter.embedding.android.FlutterActivity
 
