@@ -22,10 +22,10 @@ class AppIconButton extends StatelessWidget {
   final AppButtonSize size;
 
   double get _dimension => switch (size) {
-        AppButtonSize.sm => 32,
-        AppButtonSize.md => 40,
-        AppButtonSize.lg => 48,
-      };
+    AppButtonSize.sm => 32,
+    AppButtonSize.md => 40,
+    AppButtonSize.lg => 48,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +43,11 @@ class AppIconButton extends StatelessWidget {
       button: true,
       child: Material(
         color: background,
-        shape: CircleBorder(side: border != null ? BorderSide(color: border, width: 1.5) : BorderSide.none),
+        shape: CircleBorder(
+          side: border != null
+              ? BorderSide(color: border, width: 1.5)
+              : BorderSide.none,
+        ),
         child: InkWell(
           onTap: onPressed,
           customBorder: const CircleBorder(),
@@ -62,16 +66,34 @@ class AppIconButton extends StatelessWidget {
 
   static Color _fade(Color color) => color.withValues(alpha: color.a * 0.5);
 
-  static ({Color background, Color foreground, Color? border}) _colorsFor(AppIconButtonVariant variant) {
+  static ({Color background, Color foreground, Color? border}) _colorsFor(
+    AppIconButtonVariant variant,
+  ) {
     switch (variant) {
       case AppIconButtonVariant.solid:
-        return (background: AppColors.brandPrimary, foreground: AppColors.textOnBrand, border: null);
+        return (
+          background: AppColors.brandPrimary,
+          foreground: AppColors.textOnBrand,
+          border: null,
+        );
       case AppIconButtonVariant.soft:
-        return (background: AppColors.fillBrandSoft, foreground: AppColors.textBrand, border: null);
+        return (
+          background: AppColors.fillBrandSoft,
+          foreground: AppColors.textBrand,
+          border: null,
+        );
       case AppIconButtonVariant.outline:
-        return (background: Colors.transparent, foreground: AppColors.textPrimary, border: AppColors.borderDefault);
+        return (
+          background: Colors.transparent,
+          foreground: AppColors.textPrimary,
+          border: AppColors.borderDefault,
+        );
       case AppIconButtonVariant.ghost:
-        return (background: Colors.transparent, foreground: AppColors.textSecondary, border: null);
+        return (
+          background: Colors.transparent,
+          foreground: AppColors.textSecondary,
+          border: null,
+        );
     }
   }
 }

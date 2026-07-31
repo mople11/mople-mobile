@@ -26,7 +26,31 @@ class AppDialog extends StatelessWidget {
     return showDialog<T>(
       context: context,
       barrierColor: AppColors.surfaceOverlay,
-      builder: (_) => AppDialog(title: title, description: description, actions: actions),
+      builder: (_) =>
+          AppDialog(title: title, description: description, actions: actions),
+    );
+  }
+
+  /// 로그아웃 확인 다이얼로그 — MY/설정 화면에서 공통으로 쓰는 "취소 · 로그아웃" 패턴.
+  /// 실제 로그아웃 이동 로직은 [onConfirm]으로 호출부에서 결정합니다.
+  static Future<void> confirmLogout(
+    BuildContext context, {
+    required VoidCallback onConfirm,
+  }) {
+    return show<void>(
+      context,
+      title: '로그아웃 하시겠어요?',
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('취소'),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
+          onPressed: onConfirm,
+          child: const Text('로그아웃'),
+        ),
+      ],
     );
   }
 
@@ -44,7 +68,12 @@ class AppDialog extends StatelessWidget {
             Text(title, style: AppTextStyle.h3),
             if (description != null) ...[
               const SizedBox(height: AppSpacing.space2),
-              Text(description!, style: AppTextStyle.body.copyWith(color: AppColors.textSecondary)),
+              Text(
+                description!,
+                style: AppTextStyle.body.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
             ],
             if (actions.isNotEmpty) ...[
               const SizedBox(height: AppSpacing.space6),

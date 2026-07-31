@@ -34,23 +34,48 @@ class AppSelect extends StatelessWidget {
         DropdownButtonFormField<String>(
           initialValue: value,
           isExpanded: true,
-          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.textTertiary),
+          icon: const Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: AppColors.textTertiary,
+          ),
           style: AppTextStyle.body,
           dropdownColor: AppColors.surfaceCard,
           borderRadius: AppRadius.radiusMd,
           hint: placeholder != null
-              ? Text(placeholder!, style: AppTextStyle.body.copyWith(color: AppColors.textTertiary))
+              ? Text(
+                  placeholder!,
+                  style: AppTextStyle.body.copyWith(
+                    color: AppColors.textTertiary,
+                  ),
+                )
               : null,
           decoration: InputDecoration(
             filled: true,
             fillColor: AppColors.surfaceCard,
-            contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.space4, vertical: AppSpacing.space3),
-            border: const OutlineInputBorder(borderRadius: AppRadius.radiusMd, borderSide: BorderSide(color: AppColors.borderDefault)),
-            enabledBorder: const OutlineInputBorder(borderRadius: AppRadius.radiusMd, borderSide: BorderSide(color: AppColors.borderDefault)),
-            focusedBorder: const OutlineInputBorder(borderRadius: AppRadius.radiusMd, borderSide: BorderSide(color: AppColors.borderBrand, width: 2)),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.space4,
+              vertical: AppSpacing.space3,
+            ),
+            border: const OutlineInputBorder(
+              borderRadius: AppRadius.radiusMd,
+              borderSide: BorderSide(color: AppColors.borderDefault),
+            ),
+            enabledBorder: const OutlineInputBorder(
+              borderRadius: AppRadius.radiusMd,
+              borderSide: BorderSide(color: AppColors.borderDefault),
+            ),
+            focusedBorder: const OutlineInputBorder(
+              borderRadius: AppRadius.radiusMd,
+              borderSide: BorderSide(color: AppColors.borderBrand, width: 2),
+            ),
           ),
           items: options
-              .map((option) => DropdownMenuItem<String>(value: option, child: Text(option)))
+              .map(
+                (option) => DropdownMenuItem<String>(
+                  value: option,
+                  child: Text(option),
+                ),
+              )
               .toList(growable: false),
           onChanged: onChanged,
         ),

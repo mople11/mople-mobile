@@ -16,8 +16,14 @@ class AppTooltip extends StatelessWidget {
     return Tooltip(
       message: label,
       textStyle: AppTextStyle.caption.copyWith(color: AppColors.textOnBrand),
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space3, vertical: AppSpacing.space2),
-      decoration: BoxDecoration(color: AppColors.surfaceInverse, borderRadius: AppRadius.radiusMd),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.space3,
+        vertical: AppSpacing.space2,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceInverse,
+        borderRadius: AppRadius.radiusMd,
+      ),
       waitDuration: const Duration(milliseconds: 400),
       child: child,
     );

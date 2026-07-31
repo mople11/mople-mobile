@@ -4,6 +4,7 @@ import 'package:mople_mobile/core/constants/font.dart';
 import 'package:mople_mobile/core/constants/spacing.dart';
 import 'package:mople_mobile/core/widgets/forms/app_button.dart';
 import 'package:mople_mobile/core/widgets/layout/app_scaffold.dart';
+import 'package:mople_mobile/presentation/pages/auth/login_page.dart';
 import 'package:mople_mobile/presentation/pages/onboarding/onboarding_info.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
@@ -89,10 +90,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
               width: double.infinity,
               size: AppButtonSize.lg,
               onPressed: () {
-                // Navigator.of(context).pushAndRemoveUntil(
-                //   MaterialPageRoute(builder: (_) => const LoginPage()),
-                //   (route) => false,
-                // );
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const LoginPage()),
+                  (route) => false,
+                );
               },
             ),
           ),

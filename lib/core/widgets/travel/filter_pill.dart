@@ -35,7 +35,10 @@ class FilterPill extends StatelessWidget {
         onTap: onTap,
         borderRadius: AppRadius.radiusPill,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space4, vertical: AppSpacing.space2),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.space4,
+            vertical: AppSpacing.space2,
+          ),
           decoration: BoxDecoration(
             color: background,
             borderRadius: AppRadius.radiusPill,
@@ -44,15 +47,34 @@ class FilterPill extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (icon != null) ...[Text(icon!, style: const TextStyle(fontSize: 14)), const SizedBox(width: 4)],
-              Text(label, style: AppTextStyle.label.copyWith(color: foreground, fontWeight: AppFont.semibold)),
+              if (icon != null) ...[
+                Text(icon!, style: const TextStyle(fontSize: 14)),
+                const SizedBox(width: 4),
+              ],
+              Text(
+                label,
+                style: AppTextStyle.label.copyWith(
+                  color: foreground,
+                  fontWeight: AppFont.semibold,
+                ),
+              ),
               if (count != null) ...[
                 const SizedBox(width: 4),
-                Text('$count', style: AppTextStyle.caption.copyWith(color: foreground, fontWeight: AppFont.bold)),
+                Text(
+                  '$count',
+                  style: AppTextStyle.caption.copyWith(
+                    color: foreground,
+                    fontWeight: AppFont.bold,
+                  ),
+                ),
               ],
               if (hasDropdown) ...[
                 const SizedBox(width: 2),
-                Icon(Icons.keyboard_arrow_down_rounded, size: 16, color: foreground),
+                Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  size: 16,
+                  color: foreground,
+                ),
               ],
             ],
           ),

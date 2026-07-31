@@ -6,7 +6,12 @@ import '../../constants/radius.dart';
 import '../../constants/spacing.dart';
 
 class MoodOption {
-  const MoodOption({required this.value, required this.label, required this.emoji, required this.description});
+  const MoodOption({
+    required this.value,
+    required this.label,
+    required this.emoji,
+    required this.description,
+  });
 
   final String value;
   final String label;
@@ -38,7 +43,7 @@ class MoodSelector extends StatelessWidget {
         crossAxisCount: columns,
         mainAxisSpacing: AppSpacing.space3,
         crossAxisSpacing: AppSpacing.space3,
-        childAspectRatio: 0.85,
+        childAspectRatio: 0.72,
       ),
       itemBuilder: (context, index) {
         final option = options[index];
@@ -53,9 +58,17 @@ class MoodSelector extends StatelessWidget {
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: AppRadius.radiusLg,
-                border: Border.all(color: selected ? AppColors.borderBrand : AppColors.borderSubtle, width: selected ? 2 : 1),
+                border: Border.all(
+                  color: selected
+                      ? AppColors.borderBrand
+                      : AppColors.borderSubtle,
+                  width: selected ? 2 : 1,
+                ),
               ),
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.space4, horizontal: AppSpacing.space2),
+              padding: const EdgeInsets.symmetric(
+                vertical: AppSpacing.space4,
+                horizontal: AppSpacing.space2,
+              ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -64,14 +77,18 @@ class MoodSelector extends StatelessWidget {
                   Text(
                     option.label,
                     style: AppTextStyle.label.copyWith(
-                      color: selected ? AppColors.textBrand : AppColors.textPrimary,
+                      color: selected
+                          ? AppColors.textBrand
+                          : AppColors.textPrimary,
                       fontWeight: AppFont.bold,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     option.description,
-                    style: AppTextStyle.small.copyWith(color: AppColors.textTertiary),
+                    style: AppTextStyle.small.copyWith(
+                      color: AppColors.textTertiary,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                 ],

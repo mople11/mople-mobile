@@ -40,7 +40,9 @@ class AppTabs extends StatelessWidget {
                 decoration: BoxDecoration(
                   border: Border(
                     bottom: BorderSide(
-                      color: i == selectedIndex ? AppColors.brandPrimary : Colors.transparent,
+                      color: i == selectedIndex
+                          ? AppColors.brandPrimary
+                          : Colors.transparent,
                       width: 2,
                     ),
                   ),
@@ -48,8 +50,12 @@ class AppTabs extends StatelessWidget {
                 child: Text(
                   items[i],
                   style: AppTextStyle.label.copyWith(
-                    color: i == selectedIndex ? AppColors.textPrimary : AppColors.textSecondary,
-                    fontWeight: i == selectedIndex ? AppFont.bold : AppFont.medium,
+                    color: i == selectedIndex
+                        ? AppColors.textPrimary
+                        : AppColors.textSecondary,
+                    fontWeight: i == selectedIndex
+                        ? AppFont.bold
+                        : AppFont.medium,
                   ),
                 ),
               ),
@@ -67,17 +73,24 @@ class AppTabs extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(right: AppSpacing.space2),
             child: Material(
-              color: i == selectedIndex ? AppColors.brandPrimary : AppColors.surfaceSunken,
+              color: i == selectedIndex
+                  ? AppColors.brandPrimary
+                  : AppColors.surfaceSunken,
               borderRadius: AppRadius.radiusPill,
               child: InkWell(
                 onTap: onChanged == null ? null : () => onChanged!(i),
                 borderRadius: AppRadius.radiusPill,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space4, vertical: AppSpacing.space2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.space4,
+                    vertical: AppSpacing.space2,
+                  ),
                   child: Text(
                     items[i],
                     style: AppTextStyle.label.copyWith(
-                      color: i == selectedIndex ? AppColors.textOnBrand : AppColors.textSecondary,
+                      color: i == selectedIndex
+                          ? AppColors.textOnBrand
+                          : AppColors.textSecondary,
                       fontWeight: AppFont.semibold,
                     ),
                   ),

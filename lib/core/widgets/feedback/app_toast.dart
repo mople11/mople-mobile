@@ -37,32 +37,33 @@ class AppToast extends StatelessWidget {
     );
   }
 
-  ({Color background, Color border, Color foreground, IconData icon}) get _colors => switch (tone) {
-        AppToastTone.success => (
-            background: AppColors.successBg,
-            border: AppColors.green200,
-            foreground: AppColors.successText,
-            icon: Icons.check_circle_rounded,
-          ),
-        AppToastTone.warning => (
-            background: AppColors.warningBg,
-            border: AppColors.orange200,
-            foreground: AppColors.warningText,
-            icon: Icons.wb_cloudy_rounded,
-          ),
-        AppToastTone.danger => (
-            background: AppColors.dangerBg,
-            border: AppColors.red500.withValues(alpha: 0.3),
-            foreground: AppColors.dangerText,
-            icon: Icons.error_rounded,
-          ),
-        AppToastTone.info => (
-            background: AppColors.infoBg,
-            border: AppColors.blue200,
-            foreground: AppColors.infoText,
-            icon: Icons.info_rounded,
-          ),
-      };
+  ({Color background, Color border, Color foreground, IconData icon})
+  get _colors => switch (tone) {
+    AppToastTone.success => (
+      background: AppColors.successBg,
+      border: AppColors.green200,
+      foreground: AppColors.successText,
+      icon: Icons.check_circle_rounded,
+    ),
+    AppToastTone.warning => (
+      background: AppColors.warningBg,
+      border: AppColors.orange200,
+      foreground: AppColors.warningText,
+      icon: Icons.wb_cloudy_rounded,
+    ),
+    AppToastTone.danger => (
+      background: AppColors.dangerBg,
+      border: AppColors.red500.withValues(alpha: 0.3),
+      foreground: AppColors.dangerText,
+      icon: Icons.error_rounded,
+    ),
+    AppToastTone.info => (
+      background: AppColors.infoBg,
+      border: AppColors.blue200,
+      foreground: AppColors.infoText,
+      icon: Icons.info_rounded,
+    ),
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -88,9 +89,20 @@ class AppToast extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(title, style: AppTextStyle.label.copyWith(color: colors.foreground, fontWeight: AppFont.bold)),
+                Text(
+                  title,
+                  style: AppTextStyle.label.copyWith(
+                    color: colors.foreground,
+                    fontWeight: AppFont.bold,
+                  ),
+                ),
                 const SizedBox(height: 2),
-                Text(message, style: AppTextStyle.caption.copyWith(color: colors.foreground)),
+                Text(
+                  message,
+                  style: AppTextStyle.caption.copyWith(
+                    color: colors.foreground,
+                  ),
+                ),
               ],
             ),
           ),

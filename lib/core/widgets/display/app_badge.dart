@@ -28,11 +28,20 @@ class AppBadge extends StatelessWidget {
     final foreground = solid ? tone.onColor : tone.softForeground;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space2, vertical: 4),
-      decoration: BoxDecoration(color: background, borderRadius: AppRadius.radiusPill),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.space2,
+        vertical: 4,
+      ),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: AppRadius.radiusPill,
+      ),
       child: Text(
         label,
-        style: AppTextStyle.small.copyWith(color: foreground, fontWeight: AppFont.bold),
+        style: AppTextStyle.small.copyWith(
+          color: foreground,
+          fontWeight: AppFont.bold,
+        ),
       ),
     );
   }

@@ -23,7 +23,9 @@ class AppSlider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final display = formatValue != null ? formatValue!(value) : value.toStringAsFixed(0);
+    final display = formatValue != null
+        ? formatValue!(value)
+        : value.toStringAsFixed(0);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -33,7 +35,13 @@ class AppSlider extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(label, style: AppTextStyle.label),
-            Text(display, style: AppTextStyle.label.copyWith(color: AppColors.textPrimary, fontWeight: AppFont.semibold)),
+            Text(
+              display,
+              style: AppTextStyle.label.copyWith(
+                color: AppColors.textPrimary,
+                fontWeight: AppFont.semibold,
+              ),
+            ),
           ],
         ),
         SliderTheme(
@@ -44,12 +52,7 @@ class AppSlider extends StatelessWidget {
             overlayColor: AppColors.ringBrand,
             trackHeight: 4,
           ),
-          child: Slider(
-            value: value,
-            min: min,
-            max: max,
-            onChanged: onChanged,
-          ),
+          child: Slider(value: value, min: min, max: max, onChanged: onChanged),
         ),
       ],
     );

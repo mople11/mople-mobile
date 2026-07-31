@@ -21,7 +21,9 @@ class AppTag extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final background = selected ? AppColors.fillBrandSoft : AppColors.surfaceSunken;
+    final background = selected
+        ? AppColors.fillBrandSoft
+        : AppColors.surfaceSunken;
     final border = selected ? AppColors.borderBrand : AppColors.borderSubtle;
     final foreground = selected ? AppColors.textBrand : AppColors.textSecondary;
 
@@ -31,7 +33,10 @@ class AppTag extends StatelessWidget {
         onTap: onTap,
         borderRadius: AppRadius.radiusPill,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space3, vertical: AppSpacing.space1),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.space3,
+            vertical: AppSpacing.space1,
+          ),
           decoration: BoxDecoration(
             color: background,
             borderRadius: AppRadius.radiusPill,
@@ -40,7 +45,13 @@ class AppTag extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(label, style: AppTextStyle.caption.copyWith(color: foreground, fontWeight: AppFont.semibold)),
+              Text(
+                label,
+                style: AppTextStyle.caption.copyWith(
+                  color: foreground,
+                  fontWeight: AppFont.semibold,
+                ),
+              ),
               if (onRemove != null) ...[
                 const SizedBox(width: AppSpacing.space1),
                 GestureDetector(

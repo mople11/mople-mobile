@@ -29,7 +29,9 @@ class AppCheckbox extends StatelessWidget {
             onChanged: onChanged == null ? null : (v) => onChanged!(v ?? false),
             activeColor: AppColors.brandPrimary,
             side: const BorderSide(color: AppColors.borderStrong, width: 1.5),
-            shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(6))),
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(6)),
+            ),
           ),
           const SizedBox(width: AppSpacing.space1),
           Text(label, style: AppTextStyle.body),

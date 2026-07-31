@@ -64,13 +64,20 @@ class DestinationCard extends StatelessWidget {
                     Positioned(
                       top: AppSpacing.space3,
                       left: AppSpacing.space3,
-                      child: AppBadge(label: badge!, tone: AppTone.orange, variant: AppBadgeVariant.solid),
+                      child: AppBadge(
+                        label: badge!,
+                        tone: AppTone.orange,
+                        variant: AppBadgeVariant.solid,
+                      ),
                     ),
                   if (weather != null)
                     Positioned(
                       top: AppSpacing.space3,
                       right: AppSpacing.space3,
-                      child: WeatherChip(condition: weather!.condition, temp: weather!.temp),
+                      child: WeatherChip(
+                        condition: weather!.condition,
+                        temp: weather!.temp,
+                      ),
                     ),
                 ],
               ),
@@ -80,11 +87,26 @@ class DestinationCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(title, style: AppTextStyle.title),
+                    Text(
+                      title,
+                      style: AppTextStyle.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     const SizedBox(height: 4),
-                    Text('$region · $duration', style: AppTextStyle.caption),
+                    Text(
+                      '$region · $duration',
+                      style: AppTextStyle.caption,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     const SizedBox(height: AppSpacing.space2),
-                    AppRating(value: rating, showValue: true, count: reviewCount, starSize: 14),
+                    AppRating(
+                      value: rating,
+                      showValue: true,
+                      count: reviewCount,
+                      starSize: 14,
+                    ),
                     if (tags.isNotEmpty) ...[
                       const SizedBox(height: AppSpacing.space3),
                       Wrap(
@@ -93,7 +115,10 @@ class DestinationCard extends StatelessWidget {
                         children: [
                           for (final tag in tags)
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space2, vertical: 3),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.space2,
+                                vertical: 3,
+                              ),
                               decoration: const BoxDecoration(
                                 color: AppColors.surfaceSunken,
                                 borderRadius: AppRadius.radiusPill,

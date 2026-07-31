@@ -29,12 +29,21 @@ class AppSearchBar extends StatelessWidget {
       decoration: InputDecoration(
         hintText: placeholder,
         hintStyle: AppTextStyle.body.copyWith(color: AppColors.textTertiary),
-        prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textTertiary),
+        prefixIcon: const Icon(
+          Icons.search_rounded,
+          color: AppColors.textTertiary,
+        ),
         filled: true,
         fillColor: AppColors.surfaceSunken,
         contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.space3),
-        border: const OutlineInputBorder(borderRadius: AppRadius.radiusPill, borderSide: BorderSide.none),
-        enabledBorder: const OutlineInputBorder(borderRadius: AppRadius.radiusPill, borderSide: BorderSide.none),
+        border: const OutlineInputBorder(
+          borderRadius: AppRadius.radiusPill,
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: const OutlineInputBorder(
+          borderRadius: AppRadius.radiusPill,
+          borderSide: BorderSide.none,
+        ),
         focusedBorder: const OutlineInputBorder(
           borderRadius: AppRadius.radiusPill,
           borderSide: BorderSide(color: AppColors.borderBrand, width: 2),
