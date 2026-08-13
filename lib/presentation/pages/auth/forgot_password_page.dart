@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mople_mobile/core/navigation/app_navigation.dart';
 import 'package:mople_mobile/core/constants/color.dart';
 import 'package:mople_mobile/core/constants/font.dart';
 import 'package:mople_mobile/core/constants/radius.dart';
@@ -43,7 +44,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       title: '비밀번호 찾기',
       onBack: () {
         if (_step == _ForgotStep.email) {
-          Navigator.of(context).pop();
+          context.pop();
         } else {
           setState(() => _step = _ForgotStep.email);
         }
@@ -64,9 +65,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         _ForgotStep.reset => _ResetStep(
           onDone: () => setState(() => _step = _ForgotStep.done),
         ),
-        _ForgotStep.done => _DoneStep(
-          onLogin: () => Navigator.of(context).pop(),
-        ),
+        _ForgotStep.done => _DoneStep(onLogin: () => context.pop()),
       },
     );
   }
@@ -109,9 +108,7 @@ class _EmailStep extends StatelessWidget {
               ),
             ),
             GestureDetector(
-              onTap: () => Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (_) => const SignupPage())),
+              onTap: () => context.push(const SignupPage()),
               child: Text(
                 '회원가입',
                 style: AppTextStyle.caption.copyWith(

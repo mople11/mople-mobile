@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mople_mobile/core/navigation/app_navigation.dart';
 import 'package:mople_mobile/core/constants/color.dart';
 import 'package:mople_mobile/core/constants/font.dart';
 import 'package:mople_mobile/core/constants/radius.dart';
@@ -8,7 +9,16 @@ import 'package:mople_mobile/core/widgets/widgets.dart';
 import 'package:mople_mobile/presentation/pages/plan/route_page.dart';
 
 class ResultsPage extends StatefulWidget {
-  const ResultsPage({super.key});
+  const ResultsPage({
+    super.key,
+    required this.companionLabel,
+    required this.transportLabel,
+    required this.hours,
+  });
+
+  final String companionLabel;
+  final String transportLabel;
+  final double hours;
 
   @override
   State<ResultsPage> createState() => _ResultsPageState();
@@ -20,9 +30,13 @@ class _ResultsPageState extends State<ResultsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final results = EodiganamData.destinations
+        .where((d) => d.tags.contains(_active))
+        .toList();
+
     return AppDetailScaffold(
       title: '추천 결과',
-      onBack: () => Navigator.of(context).pop(),
+      onBack: () => context.pop(),
       subHeader: Container(
         color: AppColors.surfaceCard,
         padding: const EdgeInsets.symmetric(
@@ -73,7 +87,8 @@ class _ResultsPageState extends State<ResultsPage> {
                 const SizedBox(width: AppSpacing.space2),
                 Expanded(
                   child: Text(
-                    '맑은 날씨예요 — 야외 코스를 우선 추천했어요.',
+                    '${widget.companionLabel} · ${widget.transportLabel} · '
+                    '${widget.hours.round()}시간 기준, 맑은 날씨예요 — 야외 코스를 우선 추천했어요.',
                     style: AppTextStyle.caption.copyWith(
                       color: AppColors.infoText,
                       fontWeight: AppFont.semibold,
@@ -83,26 +98,43 @@ class _ResultsPageState extends State<ResultsPage> {
               ],
             ),
           ),
-          for (final d in EodiganamData.destinations) ...[
-            DestinationCard(
-              image: d.image,
-              title: d.title,
-              region: d.region,
-              rating: d.rating,
-              reviewCount: d.reviewCount,
-              duration: d.duration,
-              badge: d.badge,
-              tags: d.tags,
-              weather: (
-                condition: weatherConditionFromKorean(d.weatherLabel),
-                temp: d.weatherTemp,
+          if (results.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.space8),
+              child: Center(
+                child: Text(
+                  '조건에 맞는 여행지가 없어요.',
+                  style: AppTextStyle.body.copyWith(
+                    color: AppColors.textTertiary,
+                  ),
+                ),
               ),
-              onTap: () => Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (_) => const RoutePage())),
-            ),
-            const SizedBox(height: AppSpacing.space4),
-          ],
+            )
+          else
+            for (final d in results) ...[
+              DestinationCard(
+                image: d.image,
+                title: d.title,
+                region: d.region,
+                rating: d.rating,
+                reviewCount: d.reviewCount,
+                duration: d.duration,
+                badge: d.badge,
+                tags: d.tags,
+                weather: (
+                  condition: weatherConditionFromKorean(d.weatherLabel),
+                  temp: d.weatherTemp,
+                ),
+                onTap: () => context.push(
+                  RoutePage(
+                    companionLabel: widget.companionLabel,
+                    transportLabel: widget.transportLabel,
+                    hours: widget.hours,
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.space4),
+            ],
         ],
       ),
     );

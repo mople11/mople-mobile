@@ -12,6 +12,7 @@ class AppRating extends StatelessWidget {
     this.count,
     this.starCount = 5,
     this.starSize = 16,
+    this.onChanged,
   });
 
   final double value;
@@ -20,12 +21,21 @@ class AppRating extends StatelessWidget {
   final int starCount;
   final double starSize;
 
+  /// 지정하면 각 별이 탭 가능해지고, 탭한 별의 1부터 시작하는 순번을 전달한다.
+  final ValueChanged<int>? onChanged;
+
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        for (var i = 0; i < starCount; i++) _buildStar(i),
+        for (var i = 0; i < starCount; i++)
+          onChanged == null
+              ? _buildStar(i)
+              : GestureDetector(
+                  onTap: () => onChanged!(i + 1),
+                  child: _buildStar(i),
+                ),
         if (showValue) ...[
           const SizedBox(width: AppSpacing.space1),
           Text(

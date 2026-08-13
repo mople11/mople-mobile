@@ -37,6 +37,7 @@ dependencies:
   dio: ^5.10.0
   flutter_svg: ^2.3.0
   smooth_page_indicator: ^2.0.1
+  flutter_riverpod: ^3.4.2
 
 dev_dependencies:
   flutter_test:

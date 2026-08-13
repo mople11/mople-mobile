@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mople_mobile/core/navigation/app_navigation.dart';
 import 'package:mople_mobile/core/constants/color.dart';
 import 'package:mople_mobile/core/constants/font.dart';
 import 'package:mople_mobile/core/constants/radius.dart';
@@ -21,7 +22,7 @@ class UnlockPage extends StatelessWidget {
 
     return AppDetailScaffold(
       title: '숨겨진 여행지',
-      onBack: () => Navigator.of(context).pop(),
+      onBack: () => context.pop(),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -101,9 +102,21 @@ class UnlockPage extends StatelessWidget {
                       c.requiredWeather ==
                       EodiganamData.currentWeatherCondition,
                   image: c.image,
-                  onTap: () => Navigator.of(
-                    context,
-                  ).push(MaterialPageRoute(builder: (_) => const CoursePage())),
+                  onTap: () {
+                    final unlocked =
+                        c.requiredWeather ==
+                        EodiganamData.currentWeatherCondition;
+                    if (unlocked) {
+                      context.push(const CoursePage());
+                    } else {
+                      AppToast.show(
+                        context,
+                        title: '아직 잠긴 코스예요',
+                        message: c.condition,
+                        tone: AppToastTone.warning,
+                      );
+                    }
+                  },
                 ),
             ],
           ),

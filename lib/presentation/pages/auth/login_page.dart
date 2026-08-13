@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mople_mobile/core/navigation/app_navigation.dart';
 import 'package:mople_mobile/core/constants/color.dart';
 import 'package:mople_mobile/core/constants/font.dart';
 import 'package:mople_mobile/core/constants/spacing.dart';
@@ -26,12 +27,7 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  void _goHome() {
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const MainTabShell()),
-      (route) => false,
-    );
-  }
+  void _goHome() => context.pushAndRemoveAll(const MainTabShell());
 
   @override
   Widget build(BuildContext context) {
@@ -85,11 +81,7 @@ class _LoginPageState extends State<LoginPage> {
                   Align(
                     alignment: Alignment.centerRight,
                     child: GestureDetector(
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const ForgotPasswordPage(),
-                        ),
-                      ),
+                      onTap: () => context.push(const ForgotPasswordPage()),
                       child: Text(
                         '비밀번호를 잊으셨나요?',
                         style: AppTextStyle.caption.copyWith(
@@ -195,9 +187,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
                 GestureDetector(
-                  onTap: () => Navigator.of(
-                    context,
-                  ).push(MaterialPageRoute(builder: (_) => const SignupPage())),
+                  onTap: () => context.push(const SignupPage()),
                   child: Text(
                     '회원가입',
                     style: AppTextStyle.caption.copyWith(

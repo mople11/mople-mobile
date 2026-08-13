@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mople_mobile/core/navigation/app_navigation.dart';
 import 'package:mople_mobile/core/constants/color.dart';
 import 'package:mople_mobile/core/constants/font.dart';
 import 'package:mople_mobile/core/constants/radius.dart';
@@ -27,7 +28,7 @@ class WeatherPage extends StatelessWidget {
 
     return AppDetailScaffold(
       title: '날씨 추천',
-      onBack: () => Navigator.of(context).pop(),
+      onBack: () => context.pop(),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -45,7 +46,7 @@ class WeatherPage extends StatelessWidget {
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: _hours.length,
-              separatorBuilder: (_, __) =>
+              separatorBuilder: (_, _) =>
                   const SizedBox(width: AppSpacing.space2),
               itemBuilder: (context, i) {
                 final (label, icon, temp) = _hours[i];
@@ -143,9 +144,7 @@ class WeatherPage extends StatelessWidget {
                 condition: weatherConditionFromKorean(d.weatherLabel),
                 temp: d.weatherTemp,
               ),
-              onTap: () => Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (_) => const DetailPage())),
+              onTap: () => context.push(DetailPage(destinationId: d.id)),
             ),
             const SizedBox(height: AppSpacing.space4),
           ],

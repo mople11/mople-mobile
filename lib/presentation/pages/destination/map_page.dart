@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mople_mobile/core/navigation/app_navigation.dart';
 import 'package:mople_mobile/core/constants/color.dart';
 import 'package:mople_mobile/core/constants/font.dart';
 import 'package:mople_mobile/core/constants/radius.dart';
@@ -42,14 +43,18 @@ class MapPage extends StatelessWidget {
                       icon: const Icon(Icons.chevron_left_rounded),
                       semanticLabel: '뒤로',
                       variant: AppIconButtonVariant.solid,
-                      onPressed: () => Navigator.of(context).pop(),
+                      onPressed: () => context.pop(),
                     ),
                     const Spacer(),
                     AppIconButton(
                       icon: const Icon(Icons.layers_rounded),
                       semanticLabel: '레이어',
                       variant: AppIconButtonVariant.solid,
-                      onPressed: () {},
+                      onPressed: () => AppToast.show(
+                        context,
+                        title: '지도 레이어',
+                        message: '위성/교통 레이어 전환은 준비 중이에요.',
+                      ),
                     ),
                   ],
                 ),
@@ -82,7 +87,7 @@ class MapPage extends StatelessWidget {
                     const SizedBox(width: AppSpacing.space2),
                     Expanded(
                       child: Text(
-                        '순천만 국가정원 → 순천드라마촬영장',
+                        '${route.steps.first.title} → ${route.steps.last.title}',
                         style: AppTextStyle.caption.copyWith(
                           fontWeight: AppFont.semibold,
                         ),
@@ -160,9 +165,7 @@ class MapPage extends StatelessWidget {
                     AppButton(
                       label: '코스 상세로',
                       width: double.infinity,
-                      onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const CoursePage()),
-                      ),
+                      onPressed: () => context.push(const CoursePage()),
                     ),
                   ],
                 ),

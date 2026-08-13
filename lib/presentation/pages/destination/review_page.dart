@@ -1,51 +1,48 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mople_mobile/core/navigation/app_navigation.dart';
 import 'package:mople_mobile/core/constants/color.dart';
 import 'package:mople_mobile/core/constants/font.dart';
 import 'package:mople_mobile/core/constants/radius.dart';
 import 'package:mople_mobile/core/constants/spacing.dart';
 import 'package:mople_mobile/core/mock/eodiganam_data.dart';
 import 'package:mople_mobile/core/widgets/widgets.dart';
+import 'package:mople_mobile/presentation/controllers/review_controller.dart';
 
-class ReviewPage extends StatefulWidget {
-  const ReviewPage({super.key});
+class ReviewPage extends ConsumerWidget {
+  ReviewPage({super.key, String? destinationTitle})
+    : destinationTitle =
+          destinationTitle ?? EodiganamData.destinations.first.title;
 
-  @override
-  State<ReviewPage> createState() => _ReviewPageState();
-}
-
-class _ReviewPageState extends State<ReviewPage> {
-  bool _writing = false;
-  final double _rating = 5;
-  final _bodyController = TextEditingController();
-
-  @override
-  void dispose() {
-    _bodyController.dispose();
-    super.dispose();
-  }
+  final String destinationTitle;
 
   static const _distribution = [(5, 82), (4, 12), (3, 4), (2, 1), (1, 1)];
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final c = ref.watch(reviewProvider);
+    final notifier = ref.read(reviewProvider.notifier);
+
     return AppDetailScaffold(
       title: '리뷰',
-      onBack: () => Navigator.of(context).pop(),
+      onBack: () => context.pop(),
       trailing: GestureDetector(
-        onTap: () => setState(() => _writing = !_writing),
+        onTap: notifier.toggleWriting,
         child: Text(
-          _writing ? '취소' : '작성',
+          c.writing ? '취소' : '작성',
           style: AppTextStyle.caption.copyWith(
             color: AppColors.textBrand,
             fontWeight: AppFont.bold,
           ),
         ),
       ),
-      body: _writing ? _buildWriteForm() : _buildList(),
+      body: c.writing ? _buildWriteForm(c, notifier) : _buildList(c),
     );
   }
 
-  Widget _buildWriteForm() {
+  Widget _buildWriteForm(ReviewState c, ReviewNotifier notifier) {
+    final bodyController = TextEditingController();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -60,11 +57,15 @@ class _ReviewPageState extends State<ReviewPage> {
           child: Column(
             children: [
               Text(
-                '순천만 국가정원, 어떠셨나요?',
+                '$destinationTitle, 어떠셨나요?',
                 style: AppTextStyle.body.copyWith(fontWeight: AppFont.bold),
               ),
               const SizedBox(height: AppSpacing.space3),
-              AppRating(value: _rating, starSize: 34),
+              AppRating(
+                value: c.rating.toDouble(),
+                starSize: 34,
+                onChanged: notifier.setRating,
+              ),
             ],
           ),
         ),
@@ -72,7 +73,7 @@ class _ReviewPageState extends State<ReviewPage> {
         Text('여행 후기', style: AppTextStyle.label),
         const SizedBox(height: AppSpacing.space2),
         TextField(
-          controller: _bodyController,
+          controller: bodyController,
           maxLines: 5,
           style: AppTextStyle.body,
           decoration: InputDecoration(
@@ -126,13 +127,14 @@ class _ReviewPageState extends State<ReviewPage> {
           label: '리뷰 등록',
           width: double.infinity,
           size: AppButtonSize.lg,
-          onPressed: () => setState(() => _writing = false),
+          onPressed: () =>
+              notifier.submit(bodyController.text, place: destinationTitle),
         ),
       ],
     );
   }
 
-  Widget _buildList() {
+  Widget _buildList(ReviewState c) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -194,7 +196,7 @@ class _ReviewPageState extends State<ReviewPage> {
           ),
         ),
         const SizedBox(height: AppSpacing.space4),
-        for (final review in EodiganamData.reviews) ...[
+        for (final review in c.reviews) ...[
           ReviewCard(review: review),
           const SizedBox(height: AppSpacing.space3),
         ],

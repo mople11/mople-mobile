@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mople_mobile/core/navigation/app_navigation.dart';
 import 'package:mople_mobile/core/constants/color.dart';
 import 'package:mople_mobile/core/constants/font.dart';
 import 'package:mople_mobile/core/widgets/layout/app_scaffold.dart';
@@ -68,9 +69,7 @@ class AppStartPage extends StatelessWidget {
                   backgroundColor: AppColors.orange500,
                   padding: const EdgeInsets.symmetric(vertical: 10),
                 ),
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const OnboardingPage()),
-                ),
+                onPressed: () => context.push(const OnboardingPage()),
                 child: Text(
                   '시작하기',
                   style: AppTextStyle.bodyLg.copyWith(
@@ -85,9 +84,7 @@ class AppStartPage extends StatelessWidget {
               children: [
                 Text('이미 계정이 있나요? ', style: captionStyle),
                 GestureDetector(
-                  onTap: () => Navigator.of(
-                    context,
-                  ).push(MaterialPageRoute(builder: (_) => const LoginPage())),
+                  onTap: () => context.push(const LoginPage()),
                   child: Text(
                     '로그인',
                     style: captionStyle.copyWith(

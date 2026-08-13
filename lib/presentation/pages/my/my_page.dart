@@ -1,33 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mople_mobile/core/navigation/app_navigation.dart';
 import 'package:mople_mobile/core/constants/color.dart';
 import 'package:mople_mobile/core/constants/font.dart';
 import 'package:mople_mobile/core/constants/radius.dart';
 import 'package:mople_mobile/core/constants/spacing.dart';
 import 'package:mople_mobile/core/mock/eodiganam_data.dart';
 import 'package:mople_mobile/core/widgets/widgets.dart';
+import 'package:mople_mobile/presentation/controllers/main_tab_controller.dart';
+import 'package:mople_mobile/presentation/controllers/user_controller.dart';
 import 'package:mople_mobile/presentation/pages/auth/login_page.dart';
 import 'package:mople_mobile/presentation/pages/destination/review_page.dart';
+import 'package:mople_mobile/presentation/pages/my/profile_edit_page.dart';
 import 'package:mople_mobile/presentation/pages/my/settings_page.dart';
 import 'package:mople_mobile/presentation/pages/my/stamp_page.dart';
 import 'package:mople_mobile/presentation/pages/my/unlock_page.dart';
 
-class MyPage extends StatelessWidget {
-  const MyPage({super.key, required this.onSwitchTab});
-
-  final ValueChanged<String> onSwitchTab;
+class MyPage extends ConsumerWidget {
+  const MyPage({super.key});
 
   void _confirmLogout(BuildContext context) {
     AppDialog.confirmLogout(
       context,
-      onConfirm: () => Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const LoginPage()),
-        (route) => false,
-      ),
+      onConfirm: () => context.pushAndRemoveAll(const LoginPage()),
     );
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final user = EodiganamData.user;
     final earnedStamps = EodiganamData.stamps.where((s) => s.earned).length;
     final unlockedCourses = EodiganamData.unlockCourses
@@ -37,22 +37,22 @@ class MyPage extends StatelessWidget {
         .length;
 
     final menu = <(IconData, String, VoidCallback)>[
-      (Icons.edit_rounded, '프로필 편집', () {}),
-      (Icons.map_rounded, '내 여행 기록', () => onSwitchTab('bookmark')),
+      (Icons.edit_rounded, '프로필 편집', () => context.push(ProfileEditPage())),
       (
-        Icons.star_rounded,
-        '내가 쓴 리뷰',
-        () => Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (_) => const ReviewPage())),
+        Icons.map_rounded,
+        '내 여행 기록',
+        () => ref.read(mainTabProvider.notifier).switchTab('bookmark'),
       ),
-      (Icons.favorite_rounded, '찜한 여행지', () => onSwitchTab('bookmark')),
+      (Icons.star_rounded, '내가 쓴 리뷰', () => context.push(ReviewPage())),
+      (
+        Icons.favorite_rounded,
+        '찜한 여행지',
+        () => ref.read(mainTabProvider.notifier).switchTab('bookmark'),
+      ),
       (
         Icons.settings_rounded,
         '앱 설정',
-        () => Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (_) => const SettingsPage())),
+        () => context.push(const SettingsPage()),
       ),
       (Icons.logout_rounded, '로그아웃', () => _confirmLogout(context)),
     ];
@@ -63,43 +63,50 @@ class MyPage extends StatelessWidget {
         icon: const Icon(Icons.settings_rounded),
         semanticLabel: '설정',
         variant: AppIconButtonVariant.ghost,
-        onPressed: () => Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (_) => const SettingsPage())),
+        onPressed: () => context.push(const SettingsPage()),
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              const AppAvatar(name: '여행', size: AppAvatarSize.lg, ring: true),
-              const SizedBox(width: AppSpacing.space4),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
+          Builder(
+            builder: (context) {
+              final u = ref.watch(userProvider);
+              return Row(
                 children: [
-                  Text(user.name, style: AppTextStyle.h3),
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.space2,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.fillBrandSoft,
-                      borderRadius: AppRadius.radiusPill,
-                    ),
-                    child: Text(
-                      '🏅 ${user.level}',
-                      style: AppTextStyle.small.copyWith(
-                        color: AppColors.textBrand,
-                        fontWeight: AppFont.bold,
+                  const AppAvatar(
+                    name: '여행',
+                    size: AppAvatarSize.lg,
+                    ring: true,
+                  ),
+                  const SizedBox(width: AppSpacing.space4),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(u.name, style: AppTextStyle.h3),
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.space2,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.fillBrandSoft,
+                          borderRadius: AppRadius.radiusPill,
+                        ),
+                        child: Text(
+                          '🏅 ${user.level}',
+                          style: AppTextStyle.small.copyWith(
+                            color: AppColors.textBrand,
+                            fontWeight: AppFont.bold,
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ],
-              ),
-            ],
+              );
+            },
           ),
           const SizedBox(height: AppSpacing.space5),
           Row(
@@ -126,9 +133,7 @@ class MyPage extends StatelessWidget {
                   title: '여행 도장',
                   subtitle: '$earnedStamps/${EodiganamData.stamps.length} 수집',
                   icon: Icons.emoji_events_rounded,
-                  onTap: () => Navigator.of(
-                    context,
-                  ).push(MaterialPageRoute(builder: (_) => const StampPage())),
+                  onTap: () => context.push(const StampPage()),
                 ),
               ),
               const SizedBox(width: AppSpacing.space3),
@@ -139,9 +144,7 @@ class MyPage extends StatelessWidget {
                   subtitle:
                       '$unlockedCourses/${EodiganamData.unlockCourses.length} 해금',
                   icon: Icons.lock_open_rounded,
-                  onTap: () => Navigator.of(
-                    context,
-                  ).push(MaterialPageRoute(builder: (_) => const UnlockPage())),
+                  onTap: () => context.push(const UnlockPage()),
                 ),
               ),
             ],

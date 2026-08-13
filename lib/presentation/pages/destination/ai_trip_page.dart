@@ -1,57 +1,51 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mople_mobile/core/navigation/app_navigation.dart';
 import 'package:mople_mobile/core/constants/color.dart';
 import 'package:mople_mobile/core/constants/font.dart';
 import 'package:mople_mobile/core/constants/radius.dart';
 import 'package:mople_mobile/core/constants/spacing.dart';
 import 'package:mople_mobile/core/mock/eodiganam_data.dart';
 import 'package:mople_mobile/core/widgets/widgets.dart';
+import 'package:mople_mobile/presentation/controllers/ai_trip_controller.dart';
 import 'package:mople_mobile/presentation/pages/destination/course_page.dart';
 
-enum _AiStep { input, loading, result }
+class AiTripPage extends ConsumerWidget {
+  const AiTripPage({super.key, this.initialMood});
 
-class AiTripPage extends StatefulWidget {
-  const AiTripPage({super.key});
-
-  @override
-  State<AiTripPage> createState() => _AiTripPageState();
-}
-
-class _AiTripPageState extends State<AiTripPage> {
-  _AiStep _step = _AiStep.input;
-  List<String> _moods = const ['heal'];
-  double _hours = 6;
-
-  void _generate() {
-    setState(() => _step = _AiStep.loading);
-    Future.delayed(const Duration(milliseconds: 1400), () {
-      if (mounted) setState(() => _step = _AiStep.result);
-    });
-  }
+  final String? initialMood;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final c = ref.watch(aiTripProvider(initialMood));
+    final notifier = ref.read(aiTripProvider(initialMood).notifier);
+
     return AppDetailScaffold(
-      title: switch (_step) {
-        _AiStep.input => 'AI 맞춤 코스',
-        _AiStep.loading => 'AI 코스 생성',
-        _AiStep.result => 'AI 추천 코스',
+      title: switch (c.step) {
+        AiTripStep.input => 'AI 맞춤 코스',
+        AiTripStep.loading => 'AI 코스 생성',
+        AiTripStep.result => 'AI 추천 코스',
       },
       onBack: () {
-        if (_step == _AiStep.input) {
-          Navigator.of(context).pop();
+        if (c.step == AiTripStep.input) {
+          context.pop();
         } else {
-          setState(() => _step = _AiStep.input);
+          notifier.backToInput();
         }
       },
       scrollable: false,
       bodyPadding: EdgeInsets.zero,
-      body: _buildBody(),
+      body: _buildBody(context, c, notifier),
     );
   }
 
-  Widget _buildBody() {
-    switch (_step) {
-      case _AiStep.loading:
+  Widget _buildBody(
+    BuildContext context,
+    AiTripState c,
+    AiTripNotifier notifier,
+  ) {
+    switch (c.step) {
+      case AiTripStep.loading:
         return const Center(
           child: Padding(
             padding: EdgeInsets.all(AppSpacing.space8),
@@ -82,7 +76,7 @@ class _AiTripPageState extends State<AiTripPage> {
             ),
           ),
         );
-      case _AiStep.result:
+      case AiTripStep.result:
         final route = EodiganamData.route;
         return SingleChildScrollView(
           padding: const EdgeInsets.symmetric(
@@ -120,7 +114,14 @@ class _AiTripPageState extends State<AiTripPage> {
                   ],
                 ),
               ),
-              const SizedBox(height: AppSpacing.space4),
+              const SizedBox(height: AppSpacing.space3),
+              Text(
+                '${c.moodLabel} · ${c.companion} · ${c.hours.round()}시간 기준으로 추천했어요',
+                style: AppTextStyle.caption.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.space3),
               Container(
                 padding: const EdgeInsets.all(AppSpacing.space5),
                 decoration: BoxDecoration(
@@ -206,21 +207,19 @@ class _AiTripPageState extends State<AiTripPage> {
                 label: '이 코스 자세히 보기',
                 width: double.infinity,
                 size: AppButtonSize.lg,
-                onPressed: () => Navigator.of(
-                  context,
-                ).push(MaterialPageRoute(builder: (_) => const CoursePage())),
+                onPressed: () => context.push(const CoursePage()),
               ),
               const SizedBox(height: AppSpacing.space2),
               AppButton(
                 label: '다시 추천받기',
                 variant: AppButtonVariant.ghost,
                 width: double.infinity,
-                onPressed: () => setState(() => _step = _AiStep.input),
+                onPressed: notifier.backToInput,
               ),
             ],
           ),
         );
-      case _AiStep.input:
+      case AiTripStep.input:
         return SingleChildScrollView(
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.space5,
@@ -236,9 +235,9 @@ class _AiTripPageState extends State<AiTripPage> {
               const SizedBox(height: AppSpacing.space3),
               MoodSelector(
                 columns: 3,
-                value: _moods.isEmpty ? null : _moods.first,
+                value: c.moods.isEmpty ? null : c.moods.first,
                 options: EodiganamData.moods,
-                onChanged: (v) => setState(() => _moods = [v]),
+                onChanged: notifier.setMood,
               ),
               const SizedBox(height: AppSpacing.space6),
               Text(
@@ -246,7 +245,10 @@ class _AiTripPageState extends State<AiTripPage> {
                 style: AppTextStyle.bodyLg.copyWith(fontWeight: AppFont.bold),
               ),
               const SizedBox(height: AppSpacing.space3),
-              _CompanionGrid(),
+              _CompanionGrid(
+                companion: c.companion,
+                onSelect: notifier.setCompanion,
+              ),
               const SizedBox(height: AppSpacing.space5),
               Container(
                 padding: const EdgeInsets.symmetric(
@@ -260,11 +262,11 @@ class _AiTripPageState extends State<AiTripPage> {
                 ),
                 child: AppSlider(
                   label: '여행 시간',
-                  value: _hours,
+                  value: c.hours,
                   min: 2,
                   max: 12,
                   formatValue: (v) => '${v.round()}시간',
-                  onChanged: (v) => setState(() => _hours = v),
+                  onChanged: notifier.setHours,
                 ),
               ),
               const SizedBox(height: AppSpacing.space6),
@@ -272,7 +274,7 @@ class _AiTripPageState extends State<AiTripPage> {
                 label: 'AI 코스 생성하기',
                 width: double.infinity,
                 size: AppButtonSize.lg,
-                onPressed: _generate,
+                onPressed: notifier.generate,
               ),
             ],
           ),
@@ -281,13 +283,12 @@ class _AiTripPageState extends State<AiTripPage> {
   }
 }
 
-class _CompanionGrid extends StatefulWidget {
-  @override
-  State<_CompanionGrid> createState() => _CompanionGridState();
-}
+class _CompanionGrid extends StatelessWidget {
+  const _CompanionGrid({required this.companion, required this.onSelect});
 
-class _CompanionGridState extends State<_CompanionGrid> {
-  String _value = '연인';
+  final String companion;
+  final ValueChanged<String> onSelect;
+
   static const _options = [
     ('연인', Icons.favorite_rounded),
     ('가족', Icons.groups_rounded),
@@ -307,21 +308,21 @@ class _CompanionGridState extends State<_CompanionGrid> {
       children: [
         for (final (label, icon) in _options)
           Material(
-            color: _value == label
+            color: companion == label
                 ? AppColors.fillBrandSoft
                 : AppColors.surfaceCard,
             borderRadius: AppRadius.radiusMd,
             child: InkWell(
-              onTap: () => setState(() => _value = label),
+              onTap: () => onSelect(label),
               borderRadius: AppRadius.radiusMd,
               child: Container(
                 decoration: BoxDecoration(
                   borderRadius: AppRadius.radiusMd,
                   border: Border.all(
-                    color: _value == label
+                    color: companion == label
                         ? AppColors.brandPrimary
                         : AppColors.borderSubtle,
-                    width: _value == label ? 2 : 1,
+                    width: companion == label ? 2 : 1,
                   ),
                 ),
                 alignment: Alignment.center,
@@ -331,7 +332,7 @@ class _CompanionGridState extends State<_CompanionGrid> {
                     Icon(
                       icon,
                       size: 18,
-                      color: _value == label
+                      color: companion == label
                           ? AppColors.textBrand
                           : AppColors.textPrimary,
                     ),
@@ -339,10 +340,10 @@ class _CompanionGridState extends State<_CompanionGrid> {
                     Text(
                       label,
                       style: AppTextStyle.body.copyWith(
-                        fontWeight: _value == label
+                        fontWeight: companion == label
                             ? AppFont.bold
                             : AppFont.medium,
-                        color: _value == label
+                        color: companion == label
                             ? AppColors.textBrand
                             : AppColors.textPrimary,
                       ),

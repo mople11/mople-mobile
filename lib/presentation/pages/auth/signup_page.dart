@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mople_mobile/core/navigation/app_navigation.dart';
 import 'package:mople_mobile/core/constants/color.dart';
 import 'package:mople_mobile/core/constants/font.dart';
 import 'package:mople_mobile/core/constants/spacing.dart';
@@ -21,7 +22,7 @@ class _SignupPageState extends State<SignupPage> {
   Widget build(BuildContext context) {
     return AppDetailScaffold(
       title: '회원가입',
-      onBack: () => Navigator.of(context).pop(),
+      onBack: () => context.pop(),
       scrollable: false,
       bodyPadding: EdgeInsets.zero,
       body: _done ? _buildDone() : _buildForm(),
@@ -67,7 +68,7 @@ class _SignupPageState extends State<SignupPage> {
             label: '로그인하기',
             width: double.infinity,
             size: AppButtonSize.lg,
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => context.pop(),
           ),
         ],
       ),
@@ -150,7 +151,7 @@ class _SignupPageState extends State<SignupPage> {
                 ),
               ),
               GestureDetector(
-                onTap: () => Navigator.of(context).pop(),
+                onTap: () => context.pop(),
                 child: Text(
                   '로그인',
                   style: AppTextStyle.caption.copyWith(

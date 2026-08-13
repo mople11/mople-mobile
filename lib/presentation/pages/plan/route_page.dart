@@ -1,22 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mople_mobile/core/navigation/app_navigation.dart';
 import 'package:mople_mobile/core/constants/color.dart';
 import 'package:mople_mobile/core/constants/font.dart';
 import 'package:mople_mobile/core/constants/spacing.dart';
 import 'package:mople_mobile/core/mock/eodiganam_data.dart';
 import 'package:mople_mobile/core/widgets/widgets.dart';
+import 'package:mople_mobile/presentation/controllers/favorites_controller.dart';
 
-class RoutePage extends StatefulWidget {
-  const RoutePage({super.key});
+class RoutePage extends ConsumerWidget {
+  const RoutePage({
+    super.key,
+    this.companionLabel,
+    this.transportLabel,
+    this.hours,
+  });
+
+  final String? companionLabel;
+  final String? transportLabel;
+  final double? hours;
 
   @override
-  State<RoutePage> createState() => _RoutePageState();
-}
-
-class _RoutePageState extends State<RoutePage> {
-  bool _saved = false;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final favorites = ref.watch(favoritesProvider);
+    final toggleFavorite = ref.read(favoritesProvider.notifier).toggle;
     final route = EodiganamData.route;
     final d = EodiganamData.destinations.first;
 
@@ -66,7 +73,7 @@ class _RoutePageState extends State<RoutePage> {
                               icon: const Icon(Icons.chevron_left_rounded),
                               semanticLabel: '뒤로',
                               variant: AppIconButtonVariant.solid,
-                              onPressed: () => Navigator.of(context).pop(),
+                              onPressed: () => context.pop(),
                             ),
                           ),
                         ),
@@ -151,6 +158,16 @@ class _RoutePageState extends State<RoutePage> {
                               ),
                             ],
                           ),
+                          if (companionLabel != null) ...[
+                            const SizedBox(height: AppSpacing.space3),
+                            Text(
+                              '$companionLabel · $transportLabel · '
+                              '${hours!.round()}시간 기준으로 짠 동선이에요',
+                              style: AppTextStyle.caption.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
                           const SizedBox(height: AppSpacing.space5),
                           Text(
                             '추천 동선',
@@ -169,26 +186,30 @@ class _RoutePageState extends State<RoutePage> {
             ),
             AppBottomActionBar(
               padding: const EdgeInsets.all(AppSpacing.space5),
-              child: Row(
-                children: [
-                  AppButton(
-                    label: _saved ? '♥ 저장됨' : '♡ 저장',
-                    variant: _saved
-                        ? AppButtonVariant.secondary
-                        : AppButtonVariant.outline,
-                    onPressed: () => setState(() => _saved = !_saved),
-                  ),
-                  const SizedBox(width: AppSpacing.space3),
-                  Expanded(
-                    child: AppButton(
-                      label: '이 코스로 떠나기',
-                      width: double.infinity,
-                      onPressed: () => Navigator.of(
-                        context,
-                      ).popUntil((route) => route.isFirst),
-                    ),
-                  ),
-                ],
+              child: Builder(
+                builder: (context) {
+                  final saved = favorites.isFav(FavoritesNotifier.routeKey);
+                  return Row(
+                    children: [
+                      AppButton(
+                        label: saved ? '♥ 저장됨' : '♡ 저장',
+                        variant: saved
+                            ? AppButtonVariant.secondary
+                            : AppButtonVariant.outline,
+                        onPressed: () =>
+                            toggleFavorite(FavoritesNotifier.routeKey),
+                      ),
+                      const SizedBox(width: AppSpacing.space3),
+                      Expanded(
+                        child: AppButton(
+                          label: '이 코스로 떠나기',
+                          width: double.infinity,
+                          onPressed: () => context.popToFirst(),
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
           ],

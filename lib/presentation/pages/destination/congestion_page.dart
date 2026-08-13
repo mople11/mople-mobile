@@ -1,36 +1,35 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mople_mobile/core/navigation/app_navigation.dart';
 import 'package:mople_mobile/core/constants/color.dart';
 import 'package:mople_mobile/core/constants/font.dart';
 import 'package:mople_mobile/core/constants/radius.dart';
 import 'package:mople_mobile/core/constants/spacing.dart';
-import 'package:mople_mobile/core/mock/eodiganam_data.dart';
 import 'package:mople_mobile/core/widgets/widgets.dart';
+import 'package:mople_mobile/presentation/controllers/congestion_controller.dart';
 import 'package:mople_mobile/presentation/pages/destination/detail_page.dart';
 import 'package:mople_mobile/presentation/pages/destination/map_page.dart';
 
-class CongestionPage extends StatefulWidget {
-  const CongestionPage({super.key});
+class CongestionPage extends ConsumerWidget {
+  const CongestionPage({super.key, required this.destinationId});
 
-  @override
-  State<CongestionPage> createState() => _CongestionPageState();
-}
+  final String destinationId;
 
-class _CongestionPageState extends State<CongestionPage> {
-  bool _alertOn = false;
   static const _hourLabels = ['9시', '12시', '15시', '18시', '21시', '24시'];
 
   @override
-  Widget build(BuildContext context) {
-    final d = EodiganamData.destinations.first;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(congestionProvider(destinationId));
+    final toggleAlert = ref
+        .read(congestionProvider(destinationId).notifier)
+        .toggleAlert;
+    final d = state.destination;
     final c = d.congestion!;
-    final alternatives = EodiganamData.destinations
-        .where((x) => x.id != d.id && x.congestion?.level != '혼잡')
-        .take(2)
-        .toList();
+    final alternatives = state.alternatives;
 
     return AppDetailScaffold(
       title: '관광지 혼잡도',
-      onBack: () => Navigator.of(context).pop(),
+      onBack: () => context.pop(),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -164,8 +163,8 @@ class _CongestionPageState extends State<CongestionPage> {
                   ),
                 ),
                 Switch(
-                  value: _alertOn,
-                  onChanged: (v) => setState(() => _alertOn = v),
+                  value: state.alertOn,
+                  onChanged: toggleAlert,
                   activeTrackColor: AppColors.brandPrimary,
                 ),
               ],
@@ -186,9 +185,7 @@ class _CongestionPageState extends State<CongestionPage> {
                 duration: alt.duration,
                 tags: alt.tags,
                 image: alt.image,
-                onTap: () => Navigator.of(
-                  context,
-                ).push(MaterialPageRoute(builder: (_) => const DetailPage())),
+                onTap: () => context.push(DetailPage(destinationId: alt.id)),
               ),
               const SizedBox(height: AppSpacing.space3),
             ],
@@ -199,9 +196,7 @@ class _CongestionPageState extends State<CongestionPage> {
         child: AppButton(
           label: '경로 찾기',
           width: double.infinity,
-          onPressed: () => Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (_) => const MapPage())),
+          onPressed: () => context.push(const MapPage()),
         ),
       ),
     );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mople_mobile/core/navigation/app_navigation.dart';
 import 'package:mople_mobile/core/constants/color.dart';
 import 'package:mople_mobile/core/constants/font.dart';
 import 'package:mople_mobile/core/constants/spacing.dart';
@@ -89,12 +90,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
               label: '로그인',
               width: double.infinity,
               size: AppButtonSize.lg,
-              onPressed: () {
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const LoginPage()),
-                  (route) => false,
-                );
-              },
+              onPressed: () => context.pushAndRemoveAll(const LoginPage()),
             ),
           ),
         ],

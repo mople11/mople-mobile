@@ -1,29 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mople_mobile/core/navigation/app_navigation.dart';
 import 'package:mople_mobile/core/constants/color.dart';
 import 'package:mople_mobile/core/constants/font.dart';
 import 'package:mople_mobile/core/constants/radius.dart';
 import 'package:mople_mobile/core/constants/spacing.dart';
 import 'package:mople_mobile/core/mock/eodiganam_data.dart';
 import 'package:mople_mobile/core/widgets/widgets.dart';
+import 'package:mople_mobile/presentation/controllers/detail_controller.dart';
+import 'package:mople_mobile/presentation/controllers/favorites_controller.dart';
 import 'package:mople_mobile/presentation/pages/destination/congestion_page.dart';
 import 'package:mople_mobile/presentation/pages/destination/course_page.dart';
 import 'package:mople_mobile/presentation/pages/destination/map_page.dart';
 import 'package:mople_mobile/presentation/pages/destination/review_page.dart';
 
-class DetailPage extends StatefulWidget {
-  const DetailPage({super.key});
+class DetailPage extends ConsumerWidget {
+  const DetailPage({super.key, required this.destinationId});
+
+  final String destinationId;
 
   @override
-  State<DetailPage> createState() => _DetailPageState();
-}
-
-class _DetailPageState extends State<DetailPage> {
-  bool _fav = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final d = EodiganamData.destinations.first;
-    final others = EodiganamData.destinations.sublist(1, 4);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final controller = ref.watch(detailProvider(destinationId));
+    final favorites = ref.watch(favoritesProvider);
+    final toggleFavorite = ref.read(favoritesProvider.notifier).toggle;
+    final d = controller.destination;
+    final others = controller.similar;
 
     return Scaffold(
       backgroundColor: AppColors.surfacePage,
@@ -55,26 +57,30 @@ class _DetailPageState extends State<DetailPage> {
                                   icon: const Icon(Icons.chevron_left_rounded),
                                   semanticLabel: '뒤로',
                                   variant: AppIconButtonVariant.solid,
-                                  onPressed: () => Navigator.of(context).pop(),
+                                  onPressed: () => context.pop(),
                                 ),
                                 const Spacer(),
                                 AppIconButton(
                                   icon: const Icon(Icons.share_rounded),
                                   semanticLabel: '공유',
                                   variant: AppIconButtonVariant.solid,
-                                  onPressed: () {},
+                                  onPressed: () => AppToast.show(
+                                    context,
+                                    title: '공유',
+                                    message: '${d.title} 링크를 복사했어요.',
+                                  ),
                                 ),
                                 const SizedBox(width: AppSpacing.space2),
                                 AppIconButton(
                                   icon: Icon(
                                     Icons.favorite_rounded,
-                                    color: _fav
+                                    color: favorites.isFav(d.id)
                                         ? AppColors.brandAccent
                                         : AppColors.neutral700,
                                   ),
                                   semanticLabel: '찜',
                                   variant: AppIconButtonVariant.solid,
-                                  onPressed: () => setState(() => _fav = !_fav),
+                                  onPressed: () => toggleFavorite(d.id),
                                 ),
                               ],
                             ),
@@ -190,10 +196,8 @@ class _DetailPageState extends State<DetailPage> {
                               borderRadius: AppRadius.radiusLg,
                               child: InkWell(
                                 borderRadius: AppRadius.radiusLg,
-                                onTap: () => Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => const CongestionPage(),
-                                  ),
+                                onTap: () => context.push(
+                                  CongestionPage(destinationId: d.id),
                                 ),
                                 child: Container(
                                   padding: const EdgeInsets.all(
@@ -297,11 +301,7 @@ class _DetailPageState extends State<DetailPage> {
                           ),
                           const SizedBox(height: AppSpacing.space3),
                           GestureDetector(
-                            onTap: () => Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => const MapPage(),
-                              ),
-                            ),
+                            onTap: () => context.push(const MapPage()),
                             child: const MapPreviewCard(
                               height: 150,
                               pins: 1,
@@ -329,10 +329,8 @@ class _DetailPageState extends State<DetailPage> {
                                 ),
                               ),
                               GestureDetector(
-                                onTap: () => Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => const ReviewPage(),
-                                  ),
+                                onTap: () => context.push(
+                                  ReviewPage(destinationTitle: d.title),
                                 ),
                                 child: Text(
                                   '전체보기',
@@ -369,7 +367,7 @@ class _DetailPageState extends State<DetailPage> {
                           horizontal: AppSpacing.space5,
                         ),
                         itemCount: others.length,
-                        separatorBuilder: (_, __) =>
+                        separatorBuilder: (_, _) =>
                             const SizedBox(width: AppSpacing.space3),
                         itemBuilder: (context, i) {
                           final x = others[i];
@@ -383,6 +381,8 @@ class _DetailPageState extends State<DetailPage> {
                               reviewCount: x.reviewCount,
                               duration: x.duration,
                               badge: x.badge,
+                              onTap: () =>
+                                  context.push(DetailPage(destinationId: x.id)),
                             ),
                           );
                         },
@@ -399,18 +399,14 @@ class _DetailPageState extends State<DetailPage> {
                   AppButton(
                     label: '길찾기',
                     variant: AppButtonVariant.outline,
-                    onPressed: () => Navigator.of(
-                      context,
-                    ).push(MaterialPageRoute(builder: (_) => const MapPage())),
+                    onPressed: () => context.push(const MapPage()),
                   ),
                   const SizedBox(width: AppSpacing.space3),
                   Expanded(
                     child: AppButton(
                       label: '코스에 추가',
                       width: double.infinity,
-                      onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const CoursePage()),
-                      ),
+                      onPressed: () => context.push(const CoursePage()),
                     ),
                   ),
                 ],

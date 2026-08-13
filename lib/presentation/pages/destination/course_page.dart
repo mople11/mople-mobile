@@ -1,23 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mople_mobile/core/navigation/app_navigation.dart';
 import 'package:mople_mobile/core/constants/color.dart';
 import 'package:mople_mobile/core/constants/font.dart';
 import 'package:mople_mobile/core/constants/spacing.dart';
 import 'package:mople_mobile/core/mock/eodiganam_data.dart';
 import 'package:mople_mobile/core/widgets/widgets.dart';
+import 'package:mople_mobile/presentation/controllers/favorites_controller.dart';
 import 'package:mople_mobile/presentation/pages/destination/map_page.dart';
 
-class CoursePage extends StatefulWidget {
+class CoursePage extends ConsumerWidget {
   const CoursePage({super.key});
 
   @override
-  State<CoursePage> createState() => _CoursePageState();
-}
-
-class _CoursePageState extends State<CoursePage> {
-  bool _saved = false;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final favorites = ref.watch(favoritesProvider);
+    final toggleFavorite = ref.read(favoritesProvider.notifier).toggle;
     final route = EodiganamData.route;
     final d = EodiganamData.destinations.first;
 
@@ -69,7 +67,7 @@ class _CoursePageState extends State<CoursePage> {
                               icon: const Icon(Icons.chevron_left_rounded),
                               semanticLabel: '뒤로',
                               variant: AppIconButtonVariant.solid,
-                              onPressed: () => Navigator.of(context).pop(),
+                              onPressed: () => context.pop(),
                             ),
                           ),
                         ),
@@ -159,11 +157,7 @@ class _CoursePageState extends State<CoursePage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           GestureDetector(
-                            onTap: () => Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => const MapPage(),
-                              ),
-                            ),
+                            onTap: () => context.push(const MapPage()),
                             child: const MapPreviewCard(
                               height: 160,
                               pins: 4,
@@ -187,35 +181,39 @@ class _CoursePageState extends State<CoursePage> {
               ),
             ),
             AppBottomActionBar(
-              child: Row(
-                children: [
-                  AppButton(
-                    label: _saved ? '저장됨' : '저장',
-                    variant: _saved
-                        ? AppButtonVariant.secondary
-                        : AppButtonVariant.outline,
-                    leading: Icon(
-                      _saved
-                          ? Icons.bookmark_rounded
-                          : Icons.bookmark_border_rounded,
-                      size: 16,
-                      color: _saved
-                          ? AppColors.textOnBrand
-                          : AppColors.textBrand,
-                    ),
-                    onPressed: () => setState(() => _saved = !_saved),
-                  ),
-                  const SizedBox(width: AppSpacing.space3),
-                  Expanded(
-                    child: AppButton(
-                      label: '내비게이션 시작',
-                      width: double.infinity,
-                      onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const MapPage()),
+              child: Builder(
+                builder: (context) {
+                  final saved = favorites.isFav(FavoritesNotifier.routeKey);
+                  return Row(
+                    children: [
+                      AppButton(
+                        label: saved ? '저장됨' : '저장',
+                        variant: saved
+                            ? AppButtonVariant.secondary
+                            : AppButtonVariant.outline,
+                        leading: Icon(
+                          saved
+                              ? Icons.bookmark_rounded
+                              : Icons.bookmark_border_rounded,
+                          size: 16,
+                          color: saved
+                              ? AppColors.textOnBrand
+                              : AppColors.textBrand,
+                        ),
+                        onPressed: () =>
+                            toggleFavorite(FavoritesNotifier.routeKey),
                       ),
-                    ),
-                  ),
-                ],
+                      const SizedBox(width: AppSpacing.space3),
+                      Expanded(
+                        child: AppButton(
+                          label: '내비게이션 시작',
+                          width: double.infinity,
+                          onPressed: () => context.push(const MapPage()),
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
           ],

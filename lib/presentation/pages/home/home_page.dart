@@ -1,24 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mople_mobile/core/navigation/app_navigation.dart';
 import 'package:mople_mobile/core/constants/color.dart';
 import 'package:mople_mobile/core/constants/font.dart';
 import 'package:mople_mobile/core/constants/radius.dart';
 import 'package:mople_mobile/core/constants/spacing.dart';
 import 'package:mople_mobile/core/mock/eodiganam_data.dart';
 import 'package:mople_mobile/core/widgets/widgets.dart';
+import 'package:mople_mobile/presentation/controllers/main_tab_controller.dart';
 import 'package:mople_mobile/presentation/pages/destination/ai_trip_page.dart';
 import 'package:mople_mobile/presentation/pages/home/home_discover_page.dart';
 import 'package:mople_mobile/presentation/pages/home/weather_page.dart';
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key, required this.onSwitchTab});
-
-  final ValueChanged<String> onSwitchTab;
+class HomePage extends ConsumerStatefulWidget {
+  const HomePage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  ConsumerState<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends ConsumerState<HomePage> {
   String _mood = 'heal';
 
   @override
@@ -67,15 +68,14 @@ class _HomePageState extends State<HomePage> {
                 AppIconButton(
                   icon: const Icon(Icons.cloud_rounded),
                   semanticLabel: '날씨',
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const WeatherPage()),
-                  ),
+                  onPressed: () => context.push(const WeatherPage()),
                 ),
               ],
             ),
             const SizedBox(height: AppSpacing.space3),
             GestureDetector(
-              onTap: () => widget.onSwitchTab('search'),
+              onTap: () =>
+                  ref.read(mainTabProvider.notifier).switchTab('search'),
               child: const AbsorbPointer(
                 child: AppSearchBar(placeholder: '여수, 순천, 담양…'),
               ),
@@ -110,9 +110,7 @@ class _HomePageState extends State<HomePage> {
                 size: 18,
                 color: AppColors.neutral0,
               ),
-              onPressed: () => Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (_) => const AiTripPage())),
+              onPressed: () => context.push(AiTripPage(initialMood: _mood)),
             ),
             const SizedBox(height: AppSpacing.space5),
             Material(
@@ -120,9 +118,7 @@ class _HomePageState extends State<HomePage> {
               borderRadius: AppRadius.radiusLg,
               child: InkWell(
                 borderRadius: AppRadius.radiusLg,
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const HomeDiscoverPage()),
-                ),
+                onTap: () => context.push(const HomeDiscoverPage()),
                 child: Padding(
                   padding: const EdgeInsets.all(AppSpacing.space4),
                   child: Row(

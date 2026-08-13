@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mople_mobile/core/navigation/app_navigation.dart';
 import 'package:mople_mobile/core/constants/color.dart';
 import 'package:mople_mobile/core/constants/font.dart';
 import 'package:mople_mobile/core/constants/radius.dart';
@@ -35,7 +36,7 @@ class _PlanPageState extends State<PlanPage> {
   Widget build(BuildContext context) {
     return AppDetailScaffold(
       title: '맞춤 코스 만들기',
-      onBack: () => Navigator.of(context).pop(),
+      onBack: () => context.pop(),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -85,9 +86,17 @@ class _PlanPageState extends State<PlanPage> {
           label: '코스 추천받기',
           width: double.infinity,
           size: AppButtonSize.lg,
-          onPressed: () => Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (_) => const ResultsPage())),
+          onPressed: () => context.push(
+            ResultsPage(
+              companionLabel: _companions
+                  .firstWhere((c) => c.$1 == _companion)
+                  .$2,
+              transportLabel: _transports
+                  .firstWhere((t) => t.$1 == _transport)
+                  .$2,
+              hours: _hours,
+            ),
+          ),
         ),
       ),
     );

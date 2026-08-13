@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mople_mobile/core/navigation/app_navigation.dart';
 import 'package:mople_mobile/core/constants/color.dart';
 import 'package:mople_mobile/core/constants/font.dart';
 import 'package:mople_mobile/core/constants/radius.dart';
@@ -15,7 +16,7 @@ class StampPage extends StatelessWidget {
 
     return AppDetailScaffold(
       title: '전남 여행 도장',
-      onBack: () => Navigator.of(context).pop(),
+      onBack: () => context.pop(),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

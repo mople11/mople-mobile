@@ -1,45 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mople_mobile/core/widgets/widgets.dart';
+import 'package:mople_mobile/presentation/controllers/main_tab_controller.dart';
 import 'package:mople_mobile/presentation/pages/home/bookmark_page.dart';
 import 'package:mople_mobile/presentation/pages/home/home_page.dart';
 import 'package:mople_mobile/presentation/pages/home/search_page.dart';
 import 'package:mople_mobile/presentation/pages/my/my_page.dart';
 
 /// 홈 · 탐색 · 찜 · MY 4개 탭을 하나의 화면 스택에서 전환하는 셸.
-class MainTabShell extends StatefulWidget {
-  const MainTabShell({super.key, this.initialTab = 'home'});
-
-  final String initialTab;
-
-  @override
-  State<MainTabShell> createState() => _MainTabShellState();
-}
-
-class _MainTabShellState extends State<MainTabShell> {
-  late String _tab = widget.initialTab;
+class MainTabShell extends ConsumerWidget {
+  const MainTabShell({super.key});
 
   static const _tabs = ['home', 'search', 'bookmark', 'my'];
 
-  void switchTab(String tab) => setState(() => _tab = tab);
-
   @override
-  Widget build(BuildContext context) {
-    final index = _tabs.indexOf(_tab);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tab = ref.watch(mainTabProvider);
+    final switchTab = ref.read(mainTabProvider.notifier).switchTab;
+    final index = _tabs.indexOf(tab);
 
     return Scaffold(
       body: SafeArea(
         child: IndexedStack(
           index: index,
-          children: [
-            HomePage(onSwitchTab: switchTab),
-            SearchPage(onSwitchTab: switchTab),
-            BookmarkPage(onSwitchTab: switchTab),
-            MyPage(onSwitchTab: switchTab),
-          ],
+          children: const [HomePage(), SearchPage(), BookmarkPage(), MyPage()],
         ),
       ),
       bottomNavigationBar: AppBottomNav(
-        value: _tab,
+        value: tab,
         onChanged: switchTab,
         items: const [
           AppBottomNavItem(value: 'home', label: '홈', icon: Icons.home_rounded),
