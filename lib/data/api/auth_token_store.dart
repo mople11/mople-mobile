@@ -22,7 +22,7 @@ import 'package:path_provider/path_provider.dart';
 /// 2. 앱 지원 디렉터리의 표시 파일 — Keychain 이 통째로 실패해도 파일은 써진다
 /// 3. 1·2 가 모두 실패하면 세션 자체를 빈 값으로 덮어쓴다(삭제와 다른 연산이다)
 /// 4. 이번 프로세스 한정 [_deleteFailed] 플래그
-/// 5. 표시를 **읽지 못하면** 복원하지 않는다(fail-closed)
+/// 5. 표시를 한 곳이라도 **읽지 못하면** 복원하지 않는다(fail-closed)
 ///
 /// 표시는 로그아웃 여부일 뿐 비밀이 아니므로 파일에 평문으로 두어도 무방하다.
 abstract final class AuthTokenStore {
@@ -82,8 +82,11 @@ abstract final class AuthTokenStore {
     try {
       pending = await _hasLogoutMarker();
     } catch (e) {
+      // 확인할 수 없으면 복원하지 않는다. 다만 세션을 지우지는 않는다 —
+      // 일시적인 저장소 오류로 멀쩡한 세션을 날려 강제 로그아웃시키지 않기
+      // 위해서다. 복원을 안 하므로 이번 실행에서 토큰이 쓰이는 일은 없고,
+      // 다음 실행에서 표시를 읽을 수 있으면 그때 정리된다.
       debugPrint('[Auth] 로그아웃 표시를 읽지 못해 세션을 복원하지 않습니다: $e');
-      await _clearQuietly();
       return null;
     }
     if (pending) {
@@ -181,25 +184,31 @@ abstract final class AuthTokenStore {
   }
 
   /// 어느 한 곳이라도 표시가 있으면 true.
-  /// **양쪽 모두 읽지 못하면 예외를 올린다** — 호출부는 복원을 포기한다.
+  ///
+  /// **한 곳이라도 읽지 못하면 예외를 올린다** — 호출부는 복원을 포기한다.
+  /// 표시는 한쪽에만 기록됐을 수 있어서(기록도 한쪽이 실패할 수 있다), 읽지 못한
+  /// 저장소에 표시가 있었는지 알 수 없다. 나머지 한 곳이 "표시 없음"이라고
+  /// 해서 로그아웃이 없었다고 단정하면 남아 있는 세션이 되살아난다.
   static Future<bool> _hasLogoutMarker() async {
     Object? storageError;
     Object? fileError;
+    var found = false;
 
     try {
       final value = await _storage.read(key: _logoutMarkerKey);
-      if (value != null && value.isNotEmpty) return true;
+      if (value != null && value.isNotEmpty) found = true;
     } catch (e) {
       storageError = e;
     }
     try {
       final file = await _logoutMarkerFile();
-      if (file.existsSync()) return true;
+      if (file.existsSync()) found = true;
     } catch (e) {
       fileError = e;
     }
 
-    if (storageError != null && fileError != null) {
+    if (found) return true;
+    if (storageError != null || fileError != null) {
       throw StateError('로그아웃 표시 확인 실패: $storageError / $fileError');
     }
     return false;
