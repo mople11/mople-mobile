@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mople_mobile/data/mock/mock_api.dart';
 import 'package:mople_mobile/data/models/models.dart';
+import 'package:mople_mobile/data/repositories/repositories.dart';
 import 'package:mople_mobile/presentation/controllers/base/async_result.dart';
 
 /// 스탬프북(`GET /stamps`, `POST /stamps/checkin`) 상태.
@@ -50,7 +50,8 @@ class StampNotifier extends Notifier<StampState> {
 
   Future<void> load() async {
     state = state.copyWith(stampBook: const AsyncLoading());
-    state = state.copyWith(stampBook: await guardAsync(mockApi.fetchStampBook));
+    final result = await guardAsync(gamificationRepository.fetchStampBook);
+    state = state.copyWith(stampBook: result);
   }
 
   /// 위치 체크인. 이미 획득한 지역이면 `stampAcquired: false` 로 온다.
@@ -60,7 +61,9 @@ class StampNotifier extends Notifier<StampState> {
   }) async {
     final request = StampCheckInRequest(lat: lat, lng: lng);
     state = state.copyWith(checkIn: const AsyncLoading());
-    final result = await guardAsync(() => mockApi.checkIn(request));
+    final result = await guardAsync(
+      () => gamificationRepository.checkIn(request),
+    );
     state = state.copyWith(checkIn: result);
     if (result.value?.stampAcquired ?? false) await load();
     return result.value;

@@ -1,37 +1,63 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mople_mobile/core/navigation/app_navigation.dart';
 import 'package:mople_mobile/core/constants/color.dart';
 import 'package:mople_mobile/core/constants/font.dart';
 import 'package:mople_mobile/core/constants/spacing.dart';
-import 'package:mople_mobile/core/mock/eodiganam_data.dart';
 import 'package:mople_mobile/core/widgets/widgets.dart';
+import 'package:mople_mobile/data/models/models.dart';
+import 'package:mople_mobile/presentation/controllers/place_search_controller.dart';
 import 'package:mople_mobile/presentation/pages/destination/detail_page.dart';
 
-class SearchPage extends StatefulWidget {
+/// 통합 검색 — `GET /search`.
+///
+/// 카테고리 필터는 서버가 받는 [PlaceCategory] 값 집합을 그대로 쓴다.
+class SearchPage extends ConsumerStatefulWidget {
   const SearchPage({super.key});
 
   @override
-  State<SearchPage> createState() => _SearchPageState();
+  ConsumerState<SearchPage> createState() => _SearchPageState();
 }
 
-class _SearchPageState extends State<SearchPage> {
-  String _active = '전체';
-  String _query = '';
-  static const _filters = ['전체', '바다뷰', '자연', '맛집', '포토존', '역사'];
+class _SearchPageState extends ConsumerState<SearchPage> {
+  Timer? _debounce;
 
-  List<Destination> get _results => EodiganamData.destinations.where((d) {
-    final matchesFilter = _active == '전체' || d.tags.contains(_active);
-    final matchesQuery =
-        _query.isEmpty ||
-        d.title.contains(_query) ||
-        d.region.contains(_query) ||
-        d.tags.any((t) => t.contains(_query));
-    return matchesFilter && matchesQuery;
-  }).toList();
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() => ref.read(placeSearchProvider.notifier).search());
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  /// 타이핑마다 요청하지 않도록 400ms 묶어서 보낸다.
+  void _onQueryChanged(String value) {
+    ref.read(placeSearchProvider.notifier).setKeyword(value);
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 400), () {
+      if (mounted) ref.read(placeSearchProvider.notifier).search();
+    });
+  }
+
+  void _onCategoryTap(PlaceCategory? category) {
+    final notifier = ref.read(placeSearchProvider.notifier);
+    if (category == null) {
+      notifier.clearFilters();
+    } else {
+      notifier.toggleCategory(category);
+    }
+    notifier.search();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final results = _results;
+    final state = ref.watch(placeSearchProvider);
 
     return Scaffold(
       backgroundColor: AppColors.surfacePage,
@@ -55,22 +81,29 @@ class _SearchPageState extends State<SearchPage> {
                 children: [
                   AppSearchBar(
                     placeholder: '어디로 떠나시나요?',
-                    onChanged: (v) => setState(() => _query = v),
+                    onChanged: _onQueryChanged,
                   ),
                   const SizedBox(height: AppSpacing.space3),
                   SizedBox(
                     height: 36,
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
-                      itemCount: _filters.length,
+                      itemCount: PlaceCategory.values.length + 1,
                       separatorBuilder: (_, _) =>
                           const SizedBox(width: AppSpacing.space2),
                       itemBuilder: (context, i) {
-                        final f = _filters[i];
+                        if (i == 0) {
+                          return FilterPill(
+                            label: '전체',
+                            active: state.category == null,
+                            onTap: () => _onCategoryTap(null),
+                          );
+                        }
+                        final category = PlaceCategory.values[i - 1];
                         return FilterPill(
-                          label: f,
-                          active: _active == f,
-                          onTap: () => setState(() => _active = f),
+                          label: category.value,
+                          active: state.category == category,
+                          onTap: () => _onCategoryTap(category),
                         );
                       },
                     ),
@@ -89,72 +122,42 @@ class _SearchPageState extends State<SearchPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '총 ${results.length}곳',
-                          style: AppTextStyle.caption.copyWith(
-                            color: AppColors.textSecondary,
-                            fontWeight: AppFont.semibold,
-                          ),
-                        ),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              '추천순',
-                              style: AppTextStyle.caption.copyWith(
-                                color: AppColors.textSecondary,
-                                fontWeight: AppFont.semibold,
-                              ),
-                            ),
-                            const Icon(
-                              Icons.keyboard_arrow_down_rounded,
-                              size: 14,
-                              color: AppColors.textSecondary,
-                            ),
-                          ],
-                        ),
-                      ],
+                    Text(
+                      // 서버가 전체 건수를 pagination 으로 주므로 그 값을 쓴다.
+                      '총 ${state.results?.value?.pagination.totalCount ?? 0}곳',
+                      style: AppTextStyle.caption.copyWith(
+                        color: AppColors.textSecondary,
+                        fontWeight: AppFont.semibold,
+                      ),
                     ),
                     const SizedBox(height: AppSpacing.space3),
-                    if (results.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: AppSpacing.space8,
-                        ),
-                        child: Center(
-                          child: Text(
-                            '조건에 맞는 여행지가 없어요.',
-                            style: AppTextStyle.body.copyWith(
-                              color: AppColors.textTertiary,
+                    AsyncView<Paged<SearchResultItem>>(
+                      value: state.results,
+                      loadingHeight: 220,
+                      onRetry: () =>
+                          ref.read(placeSearchProvider.notifier).search(),
+                      isEmpty: (paged) => paged.isEmpty,
+                      emptyMessage: '조건에 맞는 여행지가 없어요.',
+                      builder: (paged) => Column(
+                        children: [
+                          for (final item in paged.items) ...[
+                            DestinationCard(
+                              image: item.thumbnail,
+                              title: item.name,
+                              region: item.location,
+                              rating: item.rating,
+                              // 서버 검색 결과에 후기 수·소요시간이 없어 비워 둔다.
+                              reviewCount: 0,
+                              duration: '',
+                              tags: [item.category],
+                              onTap: () =>
+                                  context.push(DetailPage(destinationId: item.id)),
                             ),
-                          ),
-                        ),
-                      )
-                    else
-                      for (final d in results) ...[
-                        DestinationCard(
-                          image: d.image,
-                          title: d.title,
-                          region: d.region,
-                          rating: d.rating,
-                          reviewCount: d.reviewCount,
-                          duration: d.duration,
-                          badge: d.badge,
-                          tags: d.tags,
-                          weather: (
-                            condition: weatherConditionFromKorean(
-                              d.weatherLabel,
-                            ),
-                            temp: d.weatherTemp,
-                          ),
-                          onTap: () =>
-                              context.push(DetailPage(destinationId: d.id)),
-                        ),
-                        const SizedBox(height: AppSpacing.space4),
-                      ],
+                            const SizedBox(height: AppSpacing.space4),
+                          ],
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),

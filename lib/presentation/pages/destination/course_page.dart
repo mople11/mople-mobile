@@ -6,14 +6,70 @@ import 'package:mople_mobile/core/constants/font.dart';
 import 'package:mople_mobile/core/constants/spacing.dart';
 import 'package:mople_mobile/core/mock/eodiganam_data.dart';
 import 'package:mople_mobile/core/widgets/widgets.dart';
+import 'package:mople_mobile/presentation/controllers/base/async_result.dart';
+import 'package:mople_mobile/presentation/controllers/course_controller.dart';
 import 'package:mople_mobile/presentation/controllers/favorites_controller.dart';
 import 'package:mople_mobile/presentation/pages/destination/map_page.dart';
 
-class CoursePage extends ConsumerWidget {
-  const CoursePage({super.key});
+/// 코스 상세.
+///
+/// 명세에 단일 코스 조회 엔드포인트(`GET /courses/{id}`)가 없어서 화면 구성 자체는
+/// 아직 목업을 쓰고, 하단 액션(저장/시작)만 실제 API([courseProvider])로 연결한다.
+class CoursePage extends ConsumerStatefulWidget {
+  const CoursePage({super.key, this.courseId});
+
+  final String? courseId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<CoursePage> createState() => _CoursePageState();
+}
+
+class _CoursePageState extends ConsumerState<CoursePage> {
+  @override
+  void initState() {
+    super.initState();
+    final id = widget.courseId;
+    if (id != null) {
+      Future.microtask(() => ref.read(courseProvider.notifier).setCourseId(id));
+    }
+  }
+
+  Future<void> _save(String courseId) async {
+    await ref.read(courseProvider.notifier).save(courseId);
+    if (!mounted) return;
+    final action = ref.read(courseProvider).saveAction;
+    if (action?.hasError ?? false) {
+      AppToast.show(
+        context,
+        title: '저장 실패',
+        message: action!.apiError?.displayMessage ?? '코스를 저장하지 못했어요.',
+        tone: AppToastTone.danger,
+      );
+    }
+  }
+
+  Future<void> _start(String? courseId) async {
+    if (courseId == null) {
+      context.push(const MapPage());
+      return;
+    }
+    await ref.read(courseProvider.notifier).start(courseId);
+    if (!mounted) return;
+    final started = ref.read(courseProvider).started;
+    if (started?.hasError ?? false) {
+      AppToast.show(
+        context,
+        title: '시작 실패',
+        message: started!.apiError?.displayMessage ?? '코스를 시작하지 못했어요.',
+        tone: AppToastTone.danger,
+      );
+      return;
+    }
+    if (mounted) context.push(const MapPage());
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final favorites = ref.watch(favoritesProvider);
     final toggleFavorite = ref.read(favoritesProvider.notifier).toggle;
     final route = EodiganamData.route;
@@ -183,7 +239,12 @@ class CoursePage extends ConsumerWidget {
             AppBottomActionBar(
               child: Builder(
                 builder: (context) {
-                  final saved = favorites.isFav(FavoritesNotifier.routeKey);
+                  final courseState = ref.watch(courseProvider);
+                  final hasCourse = widget.courseId != null;
+                  // 서버 코스면 서버 저장 상태를, 목업이면 기존 로컬 즐겨찾기를 따른다.
+                  final saved = hasCourse
+                      ? courseState.saved
+                      : favorites.isFav(FavoritesNotifier.routeKey);
                   return Row(
                     children: [
                       AppButton(
@@ -200,15 +261,16 @@ class CoursePage extends ConsumerWidget {
                               ? AppColors.textOnBrand
                               : AppColors.textBrand,
                         ),
-                        onPressed: () =>
-                            toggleFavorite(FavoritesNotifier.routeKey),
+                        onPressed: () => hasCourse
+                            ? _save(widget.courseId!)
+                            : toggleFavorite(FavoritesNotifier.routeKey),
                       ),
                       const SizedBox(width: AppSpacing.space3),
                       Expanded(
                         child: AppButton(
                           label: '내비게이션 시작',
                           width: double.infinity,
-                          onPressed: () => context.push(const MapPage()),
+                          onPressed: () => _start(widget.courseId),
                         ),
                       ),
                     ],

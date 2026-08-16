@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mople_mobile/core/navigation/app_navigation.dart';
 import 'package:mople_mobile/core/constants/color.dart';
 import 'package:mople_mobile/core/constants/font.dart';
 import 'package:mople_mobile/core/constants/radius.dart';
 import 'package:mople_mobile/core/constants/spacing.dart';
-import 'package:mople_mobile/core/mock/eodiganam_data.dart';
 import 'package:mople_mobile/core/widgets/widgets.dart';
+import 'package:mople_mobile/data/models/models.dart';
+import 'package:mople_mobile/presentation/controllers/place_search_controller.dart';
 import 'package:mople_mobile/presentation/pages/plan/route_page.dart';
 
-class ResultsPage extends StatefulWidget {
+/// 추천 결과 — 검색 API(`GET /search`)로 조건에 맞는 장소를 보여준다.
+///
+/// 선택한 장소는 동선 최적화(`POST /courses/optimize`)에 넘길 수 있도록
+/// [placeSearchProvider] 결과에서 골라 [RoutePage] 로 전달한다.
+class ResultsPage extends ConsumerStatefulWidget {
   const ResultsPage({
     super.key,
     required this.companionLabel,
@@ -21,18 +27,29 @@ class ResultsPage extends StatefulWidget {
   final double hours;
 
   @override
-  State<ResultsPage> createState() => _ResultsPageState();
+  ConsumerState<ResultsPage> createState() => _ResultsPageState();
 }
 
-class _ResultsPageState extends State<ResultsPage> {
-  String _active = '바다뷰';
-  static const _filters = ['바다뷰', '자연', '맛집', '포토존'];
+class _ResultsPageState extends ConsumerState<ResultsPage> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() => ref.read(placeSearchProvider.notifier).search());
+  }
+
+  void _onCategoryTap(PlaceCategory? category) {
+    final notifier = ref.read(placeSearchProvider.notifier);
+    if (category == null) {
+      notifier.clearFilters();
+    } else {
+      notifier.toggleCategory(category);
+    }
+    notifier.search();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final results = EodiganamData.destinations
-        .where((d) => d.tags.contains(_active))
-        .toList();
+    final state = ref.watch(placeSearchProvider);
 
     return AppDetailScaffold(
       title: '추천 결과',
@@ -48,13 +65,17 @@ class _ResultsPageState extends State<ResultsPage> {
           child: ListView(
             scrollDirection: Axis.horizontal,
             children: [
-              const FilterPill(label: '지역', hasDropdown: true),
+              FilterPill(
+                label: '전체',
+                active: state.category == null,
+                onTap: () => _onCategoryTap(null),
+              ),
               const SizedBox(width: AppSpacing.space2),
-              for (final f in _filters) ...[
+              for (final category in PlaceCategory.values) ...[
                 FilterPill(
-                  label: f,
-                  active: _active == f,
-                  onTap: () => setState(() => _active = f),
+                  label: category.value,
+                  active: state.category == category,
+                  onTap: () => _onCategoryTap(category),
                 ),
                 const SizedBox(width: AppSpacing.space2),
               ],
@@ -83,12 +104,12 @@ class _ResultsPageState extends State<ResultsPage> {
             ),
             child: Row(
               children: [
-                const Text('☀️', style: TextStyle(fontSize: 18)),
+                const Text('🧭', style: TextStyle(fontSize: 18)),
                 const SizedBox(width: AppSpacing.space2),
                 Expanded(
                   child: Text(
                     '${widget.companionLabel} · ${widget.transportLabel} · '
-                    '${widget.hours.round()}시간 기준, 맑은 날씨예요 — 야외 코스를 우선 추천했어요.',
+                    '${widget.hours.round()}시간 기준으로 골랐어요.',
                     style: AppTextStyle.caption.copyWith(
                       color: AppColors.infoText,
                       fontWeight: AppFont.semibold,
@@ -98,43 +119,37 @@ class _ResultsPageState extends State<ResultsPage> {
               ],
             ),
           ),
-          if (results.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.space8),
-              child: Center(
-                child: Text(
-                  '조건에 맞는 여행지가 없어요.',
-                  style: AppTextStyle.body.copyWith(
-                    color: AppColors.textTertiary,
+          AsyncView<Paged<SearchResultItem>>(
+            value: state.results,
+            loadingHeight: 260,
+            onRetry: () => ref.read(placeSearchProvider.notifier).search(),
+            isEmpty: (paged) => paged.isEmpty,
+            emptyMessage: '조건에 맞는 여행지가 없어요.',
+            builder: (paged) => Column(
+              children: [
+                for (final item in paged.items) ...[
+                  DestinationCard(
+                    image: item.thumbnail,
+                    title: item.name,
+                    region: item.location,
+                    rating: item.rating,
+                    reviewCount: 0,
+                    duration: '',
+                    tags: [item.category],
+                    onTap: () => context.push(
+                      RoutePage(
+                        companionLabel: widget.companionLabel,
+                        transportLabel: widget.transportLabel,
+                        hours: widget.hours,
+                        placeIds: paged.items.map((e) => e.id).toList(),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            )
-          else
-            for (final d in results) ...[
-              DestinationCard(
-                image: d.image,
-                title: d.title,
-                region: d.region,
-                rating: d.rating,
-                reviewCount: d.reviewCount,
-                duration: d.duration,
-                badge: d.badge,
-                tags: d.tags,
-                weather: (
-                  condition: weatherConditionFromKorean(d.weatherLabel),
-                  temp: d.weatherTemp,
-                ),
-                onTap: () => context.push(
-                  RoutePage(
-                    companionLabel: widget.companionLabel,
-                    transportLabel: widget.transportLabel,
-                    hours: widget.hours,
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.space4),
-            ],
+                  const SizedBox(height: AppSpacing.space4),
+                ],
+              ],
+            ),
+          ),
         ],
       ),
     );

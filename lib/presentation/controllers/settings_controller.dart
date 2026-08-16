@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mople_mobile/data/mock/mock_api.dart';
 import 'package:mople_mobile/data/models/models.dart';
+import 'package:mople_mobile/data/repositories/repositories.dart';
 import 'package:mople_mobile/presentation/controllers/base/async_result.dart';
 
 /// 공통 범위(`GET /settings`, `PATCH /settings`) 상태.
@@ -37,7 +37,8 @@ class SettingsNotifier extends Notifier<SettingsState> {
 
   Future<void> load() async {
     state = state.copyWith(settings: const AsyncLoading());
-    state = state.copyWith(settings: await guardAsync(mockApi.fetchSettings));
+    final result = await guardAsync(settingsRepository.fetchSettings);
+    state = state.copyWith(settings: result);
   }
 
   Future<bool> setPush(bool value) => _patch(
@@ -76,7 +77,9 @@ class SettingsNotifier extends Notifier<SettingsState> {
       updateAction: const AsyncLoading(),
     );
 
-    final result = await guardAsync(() => mockApi.updateSettings(request));
+    final result = await guardAsync(
+      () => settingsRepository.updateSettings(request),
+    );
     final ok = !result.hasError;
     state = state.copyWith(
       updateAction: result,

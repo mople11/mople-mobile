@@ -5,36 +5,56 @@ import 'package:mople_mobile/core/constants/color.dart';
 import 'package:mople_mobile/core/constants/font.dart';
 import 'package:mople_mobile/core/constants/radius.dart';
 import 'package:mople_mobile/core/constants/spacing.dart';
-import 'package:mople_mobile/core/mock/eodiganam_data.dart';
 import 'package:mople_mobile/core/widgets/widgets.dart';
+import 'package:mople_mobile/presentation/controllers/auth_controller.dart';
 import 'package:mople_mobile/presentation/controllers/main_tab_controller.dart';
-import 'package:mople_mobile/presentation/controllers/user_controller.dart';
+import 'package:mople_mobile/presentation/controllers/my_page_controller.dart';
+import 'package:mople_mobile/presentation/controllers/stamp_controller.dart';
+import 'package:mople_mobile/presentation/controllers/unlock_controller.dart';
 import 'package:mople_mobile/presentation/pages/auth/login_page.dart';
-import 'package:mople_mobile/presentation/pages/destination/review_page.dart';
+import 'package:mople_mobile/presentation/pages/my/completion_card_page.dart';
 import 'package:mople_mobile/presentation/pages/my/profile_edit_page.dart';
 import 'package:mople_mobile/presentation/pages/my/settings_page.dart';
 import 'package:mople_mobile/presentation/pages/my/stamp_page.dart';
 import 'package:mople_mobile/presentation/pages/my/unlock_page.dart';
 
-class MyPage extends ConsumerWidget {
+/// 마이페이지 — `GET /users/me` 의 프로필·활동 요약.
+class MyPage extends ConsumerStatefulWidget {
   const MyPage({super.key});
 
-  void _confirmLogout(BuildContext context) {
+  @override
+  ConsumerState<MyPage> createState() => _MyPageState();
+}
+
+class _MyPageState extends ConsumerState<MyPage> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      ref.read(myPageProvider.notifier).loadSummary();
+      ref.read(stampProvider.notifier).load();
+      ref.read(unlockProvider.notifier).load();
+    });
+  }
+
+  Future<void> _confirmLogout() async {
     AppDialog.confirmLogout(
       context,
-      onConfirm: () => context.pushAndRemoveAll(const LoginPage()),
+      onConfirm: () async {
+        await ref.read(authProvider.notifier).logout();
+        if (!mounted) return;
+        context.pushAndRemoveAll(const LoginPage());
+      },
     );
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final user = EodiganamData.user;
-    final earnedStamps = EodiganamData.stamps.where((s) => s.earned).length;
-    final unlockedCourses = EodiganamData.unlockCourses
-        .where(
-          (c) => c.requiredWeather == EodiganamData.currentWeatherCondition,
-        )
-        .length;
+  Widget build(BuildContext context) {
+    final myPage = ref.watch(myPageProvider);
+    final stamps = ref.watch(stampProvider);
+    final unlock = ref.watch(unlockProvider);
+    final profile = myPage.profile;
+    final stats = myPage.stats;
 
     final menu = <(IconData, String, VoidCallback)>[
       (Icons.edit_rounded, '프로필 편집', () => context.push(ProfileEditPage())),
@@ -43,18 +63,22 @@ class MyPage extends ConsumerWidget {
         '내 여행 기록',
         () => ref.read(mainTabProvider.notifier).switchTab('bookmark'),
       ),
-      (Icons.star_rounded, '내가 쓴 리뷰', () => context.push(ReviewPage())),
       (
         Icons.favorite_rounded,
         '찜한 여행지',
         () => ref.read(mainTabProvider.notifier).switchTab('bookmark'),
       ),
       (
+        Icons.photo_album_rounded,
+        '완주 카드',
+        () => context.push(const CompletionCardPage()),
+      ),
+      (
         Icons.settings_rounded,
         '앱 설정',
         () => context.push(const SettingsPage()),
       ),
-      (Icons.logout_rounded, '로그아웃', () => _confirmLogout(context)),
+      (Icons.logout_rounded, '로그아웃', _confirmLogout),
     ];
 
     return AppDetailScaffold(
@@ -68,59 +92,38 @@ class MyPage extends ConsumerWidget {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Builder(
-            builder: (context) {
-              final u = ref.watch(userProvider);
-              return Row(
-                children: [
-                  const AppAvatar(
-                    name: '여행',
-                    size: AppAvatarSize.lg,
-                    ring: true,
-                  ),
-                  const SizedBox(width: AppSpacing.space4),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(u.name, style: AppTextStyle.h3),
-                      const SizedBox(height: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.space2,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.fillBrandSoft,
-                          borderRadius: AppRadius.radiusPill,
-                        ),
-                        child: Text(
-                          '🏅 ${user.level}',
-                          style: AppTextStyle.small.copyWith(
-                            color: AppColors.textBrand,
-                            fontWeight: AppFont.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              );
-            },
+          Row(
+            children: [
+              AppAvatar(
+                name: profile.nickname.isEmpty ? '여행' : profile.nickname,
+                size: AppAvatarSize.lg,
+                ring: true,
+              ),
+              const SizedBox(width: AppSpacing.space4),
+              Expanded(
+                child: Text(
+                  profile.nickname.isEmpty ? '여행자' : profile.nickname,
+                  style: AppTextStyle.h3,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: AppSpacing.space5),
           Row(
             children: [
               Expanded(
-                child: _StatTile(label: '다녀온 곳', value: '${user.trips}'),
+                child: _StatTile(
+                  label: '다녀온 곳',
+                  value: '${stats.completedCourses}',
+                ),
               ),
               const SizedBox(width: AppSpacing.space3),
               Expanded(
-                child: _StatTile(label: '도장', value: '${user.stamps}'),
+                child: _StatTile(label: '도장', value: '${stats.stamps}'),
               ),
               const SizedBox(width: AppSpacing.space3),
               Expanded(
-                child: _StatTile(label: '리뷰', value: '${user.reviews}'),
+                child: _StatTile(label: '리뷰', value: '${stats.reviews}'),
               ),
             ],
           ),
@@ -131,7 +134,8 @@ class MyPage extends ConsumerWidget {
                 child: _GradientMenuCard(
                   colors: const [AppColors.green500, AppColors.green400],
                   title: '여행 도장',
-                  subtitle: '$earnedStamps/${EodiganamData.stamps.length} 수집',
+                  subtitle:
+                      '${stamps.collectedCount}/${stamps.totalCount} 수집',
                   icon: Icons.emoji_events_rounded,
                   onTap: () => context.push(const StampPage()),
                 ),
@@ -142,7 +146,7 @@ class MyPage extends ConsumerWidget {
                   colors: const [AppColors.blue500, AppColors.orange500],
                   title: '숨겨진 여행지',
                   subtitle:
-                      '$unlockedCourses/${EodiganamData.unlockCourses.length} 해금',
+                      '${unlock.unlockedCount}/${unlock.totalCount} 해금',
                   icon: Icons.lock_open_rounded,
                   onTap: () => context.push(const UnlockPage()),
                 ),

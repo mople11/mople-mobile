@@ -3,13 +3,6 @@ import 'package:mople_mobile/core/widgets/travel/weather_chip.dart';
 
 /// 어디가남 — 목업 데이터. Claude Design 원본 `EODIGANAM_DATA` 를 그대로 옮겼습니다.
 
-WeatherCondition weatherConditionFromKorean(String label) => switch (label) {
-  '맑음' => WeatherCondition.sunny,
-  '비' => WeatherCondition.rain,
-  '바람' => WeatherCondition.wind,
-  _ => WeatherCondition.cloud, // 구름, 흐림, 눈
-};
-
 class CongestionInfo {
   const CongestionInfo({
     required this.level,
@@ -103,11 +96,22 @@ class StampInfo {
     required this.region,
     required this.earned,
     required this.emoji,
+    required this.cityCode,
   });
 
+  /// 화면에 보여줄 한글 시군명.
   final String region;
+
+  /// 목업 전용 획득 여부. 서버 연동 화면에서는 `GET /stamps` 의 `collected` 를 쓴다.
   final bool earned;
+
   final String emoji;
+
+  /// 서버 `collected[]` 와 대조할 시군 코드(로마자).
+  ///
+  /// 서버가 코드/한글명 중 무엇을 내려주는지 실데이터로 확인하지 못했으므로,
+  /// 화면에서는 이 값과 [region] 을 모두 대조한다.
+  final String cityCode;
 }
 
 class UnlockCourseInfo {
@@ -453,19 +457,24 @@ abstract final class EodiganamData {
     ),
   ];
 
+  /// 시군 도장 목록.
+  ///
+  /// 서버 `GET /stamps` 의 `totalCount` 는 22(전남 전 시군)인데 여기에는 12개만
+  /// 있어, 도장 화면 그리드는 12칸만 그린다. 나머지 시군은 서버가 코드 목록을
+  /// 내려주기 시작하면 채워야 한다.
   static const List<StampInfo> stamps = [
-    StampInfo(region: '여수', earned: true, emoji: '🌊'),
-    StampInfo(region: '순천', earned: true, emoji: '🌿'),
-    StampInfo(region: '담양', earned: true, emoji: '🎋'),
-    StampInfo(region: '목포', earned: true, emoji: '⛴️'),
-    StampInfo(region: '보성', earned: true, emoji: '🍵'),
-    StampInfo(region: '완도', earned: false, emoji: '🏝️'),
-    StampInfo(region: '곡성', earned: false, emoji: '🚂'),
-    StampInfo(region: '구례', earned: true, emoji: '⛰️'),
-    StampInfo(region: '광양', earned: false, emoji: '🌸'),
-    StampInfo(region: '나주', earned: true, emoji: '🍐'),
-    StampInfo(region: '해남', earned: false, emoji: '🧭'),
-    StampInfo(region: '장흥', earned: false, emoji: '🌾'),
+    StampInfo(region: '여수', earned: true, emoji: '🌊', cityCode: 'yeosu'),
+    StampInfo(region: '순천', earned: true, emoji: '🌿', cityCode: 'suncheon'),
+    StampInfo(region: '담양', earned: true, emoji: '🎋', cityCode: 'damyang'),
+    StampInfo(region: '목포', earned: true, emoji: '⛴️', cityCode: 'mokpo'),
+    StampInfo(region: '보성', earned: true, emoji: '🍵', cityCode: 'boseong'),
+    StampInfo(region: '완도', earned: false, emoji: '🏝️', cityCode: 'wando'),
+    StampInfo(region: '곡성', earned: false, emoji: '🚂', cityCode: 'gokseong'),
+    StampInfo(region: '구례', earned: true, emoji: '⛰️', cityCode: 'gurye'),
+    StampInfo(region: '광양', earned: false, emoji: '🌸', cityCode: 'gwangyang'),
+    StampInfo(region: '나주', earned: true, emoji: '🍐', cityCode: 'naju'),
+    StampInfo(region: '해남', earned: false, emoji: '🧭', cityCode: 'haenam'),
+    StampInfo(region: '장흥', earned: false, emoji: '🌾', cityCode: 'jangheung'),
   ];
 
   static const List<UnlockCourseInfo> unlockCourses = [

@@ -1,24 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mople_mobile/core/navigation/app_navigation.dart';
 import 'package:mople_mobile/core/constants/color.dart';
 import 'package:mople_mobile/core/constants/font.dart';
 import 'package:mople_mobile/core/constants/spacing.dart';
 import 'package:mople_mobile/core/widgets/widgets.dart';
+import 'package:mople_mobile/data/api/kakao_auth.dart';
+import 'package:mople_mobile/data/models/models.dart';
+import 'package:mople_mobile/presentation/controllers/auth_controller.dart';
+import 'package:mople_mobile/presentation/controllers/base/async_result.dart';
 import 'package:mople_mobile/presentation/pages/auth/forgot_password_page.dart';
 import 'package:mople_mobile/presentation/pages/auth/signup_page.dart';
 import 'package:mople_mobile/presentation/pages/home/main_tab_shell.dart';
 
-class LoginPage extends StatefulWidget {
+class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends ConsumerState<LoginPage> {
   final _idController = TextEditingController(text: 'traveler01');
   final _pwController = TextEditingController(text: 'password');
   bool _showPassword = false;
+  bool _submitting = false;
 
   @override
   void dispose() {
@@ -28,6 +34,76 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _goHome() => context.pushAndRemoveAll(const MainTabShell());
+
+  /// 카카오에서 OAuth 토큰을 받아 서버 세션으로 교환한다.
+  Future<void> _loginWithKakao() async {
+    setState(() => _submitting = true);
+    try {
+      final oauthToken = await KakaoAuth.obtainAccessToken();
+      if (!mounted) return;
+      await ref
+          .read(authProvider.notifier)
+          .loginWithSocial(
+            provider: SocialProvider.kakao,
+            oauthToken: oauthToken,
+          );
+      if (!mounted) return;
+
+      final session = ref.read(authProvider).session;
+      if (session?.hasError ?? false) {
+        AppToast.show(
+          context,
+          title: '로그인 실패',
+          message: session!.apiError?.displayMessage ?? '카카오 로그인에 실패했어요.',
+          tone: AppToastTone.danger,
+        );
+        return;
+      }
+      _goHome();
+    } on ApiException catch (e) {
+      // 카카오 단계에서 실패(취소·미설정 등) — 서버까지 가지 않은 경우.
+      if (!mounted) return;
+      AppToast.show(
+        context,
+        title: '카카오 로그인',
+        message: e.error.displayMessage,
+        tone: AppToastTone.warning,
+      );
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
+  }
+
+  Future<void> _submitLogin() async {
+    final id = _idController.text.trim();
+    final pw = _pwController.text;
+    if (id.isEmpty || pw.isEmpty) {
+      AppToast.show(
+        context,
+        title: '입력 확인',
+        message: '아이디와 비밀번호를 입력해주세요.',
+        tone: AppToastTone.warning,
+      );
+      return;
+    }
+
+    setState(() => _submitting = true);
+    await ref.read(authProvider.notifier).login(id: id, pw: pw);
+    if (!mounted) return;
+    setState(() => _submitting = false);
+
+    final session = ref.read(authProvider).session;
+    if (session?.hasError ?? false) {
+      AppToast.show(
+        context,
+        title: '로그인 실패',
+        message: session!.apiError?.displayMessage ?? '로그인에 실패했어요.',
+        tone: AppToastTone.danger,
+      );
+      return;
+    }
+    _goHome();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,16 +131,18 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.space6),
-                  AppTextField(
+                  AppTextField.asciiOnly(
                     label: '아이디',
                     placeholder: '아이디를 입력해주세요',
                     controller: _idController,
+                    enabled: !_submitting,
                   ),
                   const SizedBox(height: AppSpacing.space4),
                   AppTextField(
                     label: '비밀번호',
                     placeholder: '비밀번호를 입력해주세요',
                     controller: _pwController,
+                    enabled: !_submitting,
                     obscureText: !_showPassword,
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -92,10 +170,10 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: AppSpacing.space5),
                   AppButton(
-                    label: '로그인',
+                    label: _submitting ? '로그인 중...' : '로그인',
                     width: double.infinity,
                     size: AppButtonSize.lg,
-                    onPressed: _goHome,
+                    onPressed: _submitting ? null : _submitLogin,
                   ),
                   const SizedBox(height: AppSpacing.space6),
                   Row(
@@ -142,34 +220,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                     ),
-                    onPressed: _goHome,
-                  ),
-                  const SizedBox(height: AppSpacing.space3),
-                  AppButton(
-                    label: 'Google로 계속하기',
-                    variant: AppButtonVariant.outline,
-                    width: double.infinity,
-                    size: AppButtonSize.lg,
-                    leading: Container(
-                      width: 20,
-                      height: 20,
-                      alignment: Alignment.center,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.fromBorderSide(
-                          BorderSide(color: AppColors.borderDefault),
-                        ),
-                      ),
-                      child: const Text(
-                        'G',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF4285F4),
-                        ),
-                      ),
-                    ),
-                    onPressed: _goHome,
+                    onPressed: _submitting ? null : _loginWithKakao,
                   ),
                 ],
               ),

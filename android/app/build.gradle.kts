@@ -28,6 +28,12 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // 카카오 네이티브 앱 키. AndroidManifest 의 리다이렉트 scheme 에 주입된다.
+        // 로컬에서는 gradle.properties(또는 ~/.gradle/gradle.properties)에
+        // kakaoNativeAppKey=발급받은_키 를 넣어 두면 된다.
+        manifestPlaceholders["KAKAO_NATIVE_APP_KEY"] =
+            (project.findProperty("kakaoNativeAppKey") as String?) ?: ""
     }
 
     buildTypes {

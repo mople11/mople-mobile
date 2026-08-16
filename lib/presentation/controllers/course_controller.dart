@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mople_mobile/data/mock/mock_api.dart';
 import 'package:mople_mobile/data/models/models.dart';
+import 'package:mople_mobile/data/repositories/repositories.dart';
 import 'package:mople_mobile/presentation/controllers/base/async_result.dart';
 
 /// 추천 범위(`POST /recommend/ai`, `/courses/**`) 상태.
@@ -134,7 +134,7 @@ class CourseNotifier extends Notifier<CourseState> {
     final request = state.recommendRequest;
     state = state.copyWith(recommendation: const AsyncLoading());
     final result = await guardAsync(
-      () => mockApi.requestAiRecommendation(request),
+      () => courseRepository.requestAiRecommendation(request),
     );
     state = state.copyWith(recommendation: result);
     if (result.value != null) setCourseId(result.value!.courseId);
@@ -146,6 +146,15 @@ class CourseNotifier extends Notifier<CourseState> {
     final ids = [...state.selectedPlaceIds];
     if (!ids.remove(placeId)) ids.add(placeId);
     state = state.copyWith(selectedPlaceIds: ids);
+  }
+
+  /// 선택 목록을 통째로 갈아끼운다.
+  ///
+  /// [courseProvider] 는 autoDispose 가 아니라 화면을 나가도 상태가 남는다.
+  /// 새 동선을 계산할 때 [togglePlace] 로 추가만 하면 이전 코스의 장소가 그대로
+  /// 섞이므로, 화면에서 넘어온 목록으로 교체해야 한다. 중복 id 도 여기서 제거한다.
+  void setSelectedPlaces(List<String> placeIds) {
+    state = state.copyWith(selectedPlaceIds: placeIds.toSet().toList());
   }
 
   void setRouteTransport(RouteTransport value) =>
@@ -175,7 +184,9 @@ class CourseNotifier extends Notifier<CourseState> {
       return null;
     }
     state = state.copyWith(optimized: const AsyncLoading());
-    final result = await guardAsync(() => mockApi.optimizeCourse(request));
+    final result = await guardAsync(
+      () => courseRepository.optimizeCourse(request),
+    );
     state = state.copyWith(optimized: result);
     return result.value;
   }
@@ -185,7 +196,7 @@ class CourseNotifier extends Notifier<CourseState> {
     final target = id ?? state.courseId;
     if (target == null) return null;
     state = state.copyWith(started: const AsyncLoading());
-    final result = await guardAsync(() => mockApi.startCourse(target));
+    final result = await guardAsync(() => courseRepository.startCourse(target));
     state = state.copyWith(started: result);
     return result.value;
   }
@@ -195,7 +206,7 @@ class CourseNotifier extends Notifier<CourseState> {
     if (target == null) return;
     final previous = state.saved;
     state = state.copyWith(saved: true, saveAction: const AsyncLoading());
-    final result = await guardAsync(() => mockApi.saveCourse(target));
+    final result = await guardAsync(() => courseRepository.saveCourse(target));
     state = state.copyWith(
       saveAction: result,
       saved: result.hasError ? previous : true,
@@ -206,7 +217,7 @@ class CourseNotifier extends Notifier<CourseState> {
     final target = id ?? state.courseId;
     if (target == null) return null;
     state = state.copyWith(shared: const AsyncLoading());
-    final result = await guardAsync(() => mockApi.shareCourse(target));
+    final result = await guardAsync(() => courseRepository.shareCourse(target));
     state = state.copyWith(shared: result);
     return result.value;
   }
@@ -221,7 +232,7 @@ class CourseNotifier extends Notifier<CourseState> {
     final request = CourseCompleteRequest(checkInLocations: checkInLocations);
     state = state.copyWith(completed: const AsyncLoading());
     final result = await guardAsync(
-      () => mockApi.completeCourse(target, request),
+      () => courseRepository.completeCourse(target, request),
     );
     state = state.copyWith(completed: result);
     return result.value;
@@ -231,14 +242,15 @@ class CourseNotifier extends Notifier<CourseState> {
   /// 비우려면 (idle 로 되돌리려면) 새 [CourseState] 를 직접 만든다.
   void resetPlan() {
     state = CourseState(
+      // 입력값은 남겨 사용자가 조건을 다시 고르지 않아도 되게 한다.
       mood: state.mood,
       companion: state.companion,
       transport: state.transport,
       timeAvailable: state.timeAvailable,
       freeText: state.freeText,
-      recommendation: state.recommendation,
       routeTransport: state.routeTransport,
-      courseId: state.courseId,
+      // recommendation/optimized/courseId 등 결과 슬롯은 비운다.
+      // 여기에 recommendation 을 남기면 화면이 결과 단계에서 못 벗어난다.
     );
   }
 }

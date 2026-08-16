@@ -96,12 +96,18 @@ class ReviewCreateRequest {
   final String? visitWeather;
 
   /// 명세의 `RATING_REQUIRED` 를 클라이언트에서 먼저 거른다.
-  bool get isValid => rating > 0;
+  bool get isValid => rating > 0 && hasText;
+
+  /// 서버 스키마상 `text` 는 필수이고 `minLength: 1` 이라 빈 문자열도 거절된다.
+  bool get hasText => (text ?? '').trim().isNotEmpty;
 
   Map<String, dynamic> toJson() => compactJson({
-    'targetId': targetId,
-    'rating': rating,
-    'text': text,
+    // 서버는 targetId 를 integer 로 받는다. 숫자가 아니면 원본을 그대로 넘긴다.
+    'targetId': int.tryParse(targetId) ?? targetId,
+    // rating 도 integer 라 소수점을 반올림해 보낸다.
+    'rating': rating.round(),
+    // 필수 필드이므로 compactJson 에 걸러지지 않도록 항상 채워 보낸다.
+    'text': text?.trim() ?? '',
     'photos': photos.isEmpty ? null : photos,
     'visitDate': visitDate,
     'visitWeather': visitWeather,

@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mople_mobile/data/mock/mock_api.dart';
 import 'package:mople_mobile/data/models/models.dart';
+import 'package:mople_mobile/data/repositories/repositories.dart';
 import 'package:mople_mobile/presentation/controllers/base/async_result.dart';
 
 /// 숨겨진 여행지(날씨 해금) 목록 — `GET /courses/unlocked`.
@@ -52,9 +52,10 @@ class UnlockNotifier extends Notifier<UnlockState> {
   Future<void> load({double? lat, double? lng}) async {
     if (lat != null && lng != null) setLocation(lat: lat, lng: lng);
     state = state.copyWith(status: const AsyncLoading());
-    state = state.copyWith(
-      status: await guardAsync(() => mockApi.fetchUnlockStatus(state.location)),
+    final result = await guardAsync(
+      () => gamificationRepository.fetchUnlockStatus(state.location),
     );
+    state = state.copyWith(status: result);
   }
 }
 

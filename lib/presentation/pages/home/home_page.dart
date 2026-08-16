@@ -7,8 +7,12 @@ import 'package:mople_mobile/core/constants/radius.dart';
 import 'package:mople_mobile/core/constants/spacing.dart';
 import 'package:mople_mobile/core/mock/eodiganam_data.dart';
 import 'package:mople_mobile/core/widgets/widgets.dart';
+import 'package:mople_mobile/data/models/models.dart';
+import 'package:mople_mobile/presentation/controllers/auth_controller.dart';
+import 'package:mople_mobile/presentation/controllers/home_controller.dart';
 import 'package:mople_mobile/presentation/controllers/main_tab_controller.dart';
 import 'package:mople_mobile/presentation/pages/destination/ai_trip_page.dart';
+import 'package:mople_mobile/presentation/pages/destination/course_page.dart';
 import 'package:mople_mobile/presentation/pages/home/home_discover_page.dart';
 import 'package:mople_mobile/presentation/pages/home/weather_page.dart';
 
@@ -23,7 +27,17 @@ class _HomePageState extends ConsumerState<HomePage> {
   String _mood = 'heal';
 
   @override
+  void initState() {
+    super.initState();
+    // build 중 provider 를 건드리지 않도록 프레임 이후로 미룬다.
+    Future.microtask(() => ref.read(homeProvider.notifier).refreshAll());
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final home = ref.watch(homeProvider);
+    final nickname = ref.watch(authProvider).currentUser?.nickname;
+
     return Scaffold(
       backgroundColor: AppColors.surfacePage,
       body: SingleChildScrollView(
@@ -60,7 +74,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                       ],
                     ),
                     Text(
-                      '안녕하세요, ${EodiganamData.user.name.replaceAll('김', '')}님',
+                      nickname == null
+                          ? '안녕하세요'
+                          : '안녕하세요, $nickname님',
                       style: AppTextStyle.h3,
                     ),
                   ],
@@ -81,12 +97,18 @@ class _HomePageState extends ConsumerState<HomePage> {
               ),
             ),
             const SizedBox(height: AppSpacing.space4),
-            const WeatherCard(
-              region: '순천시',
-              condition: WeatherCondition.sunny,
-              temp: 24,
-              high: 26,
-              low: 17,
+            AsyncView<CurrentWeather>(
+              value: home.weather,
+              loadingHeight: 132,
+              onRetry: () => ref.read(homeProvider.notifier).loadWeather(),
+              builder: (weather) => WeatherCard(
+                region: '전남',
+                condition: weatherConditionFromKorean(weather.weatherType),
+                temp: weather.temp,
+                // 서버가 최고/최저를 내려주지 않아 현재 기온을 그대로 쓴다.
+                high: weather.temp,
+                low: weather.temp,
+              ),
             ),
             const SizedBox(height: AppSpacing.space5),
             Text(
@@ -113,6 +135,35 @@ class _HomePageState extends ConsumerState<HomePage> {
               onPressed: () => context.push(AiTripPage(initialMood: _mood)),
             ),
             const SizedBox(height: AppSpacing.space5),
+            Text(
+              '추천 코스',
+              style: AppTextStyle.bodyLg.copyWith(fontWeight: AppFont.bold),
+            ),
+            const SizedBox(height: AppSpacing.space3),
+            AsyncView<HomeData>(
+              value: home.home,
+              onRetry: () => ref.read(homeProvider.notifier).loadHome(),
+              isEmpty: (data) => data.recommendedCourses.isEmpty,
+              emptyMessage: '추천할 코스가 아직 없어요.',
+              builder: (data) => Column(
+                children: [
+                  for (final course in data.recommendedCourses) ...[
+                    CourseCard(
+                      title: course.name,
+                      summary: '${course.duration} · ${course.distance}',
+                      // 서버 요약에 경유지 수가 없어 0으로 둔다.
+                      stops: 0,
+                      duration: course.duration,
+                      image: course.thumbnail,
+                      onTap: () =>
+                          context.push(CoursePage(courseId: course.courseId)),
+                    ),
+                    const SizedBox(height: AppSpacing.space4),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.space2),
             Material(
               color: AppColors.fillBrandSoft,
               borderRadius: AppRadius.radiusLg,

@@ -4,12 +4,13 @@ import 'package:mople_mobile/core/navigation/app_navigation.dart';
 import 'package:mople_mobile/core/constants/color.dart';
 import 'package:mople_mobile/core/constants/font.dart';
 import 'package:mople_mobile/core/constants/spacing.dart';
-import 'package:mople_mobile/core/mock/eodiganam_data.dart';
 import 'package:mople_mobile/core/widgets/widgets.dart';
-import 'package:mople_mobile/presentation/controllers/favorites_controller.dart';
+import 'package:mople_mobile/data/models/models.dart';
+import 'package:mople_mobile/presentation/controllers/my_page_controller.dart';
 import 'package:mople_mobile/presentation/pages/destination/course_page.dart';
 import 'package:mople_mobile/presentation/pages/destination/detail_page.dart';
 
+/// 내 여행 — 찜한 여행지(`GET /users/me/likes`)와 저장한 코스(`GET /users/me/courses`).
 class BookmarkPage extends ConsumerStatefulWidget {
   const BookmarkPage({super.key});
 
@@ -21,8 +22,18 @@ class _BookmarkPageState extends ConsumerState<BookmarkPage> {
   int _tab = 0;
 
   @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      final notifier = ref.read(myPageProvider.notifier);
+      notifier.loadLikedPlaces();
+      notifier.loadSavedCourses();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final favorites = ref.watch(favoritesProvider);
+    final myPage = ref.watch(myPageProvider);
 
     return AppDetailScaffold(
       title: '내 여행',
@@ -36,81 +47,88 @@ class _BookmarkPageState extends ConsumerState<BookmarkPage> {
           onChanged: (i) => setState(() => _tab = i),
         ),
       ),
-      body: Builder(
-        builder: (context) {
-          if (_tab == 0) {
-            final saved = favorites.favoriteDestinations;
-            if (saved.isEmpty) {
-              return const _EmptyState(
-                message: '아직 찜한 여행지가 없어요.\n하트를 눌러 저장해보세요.',
-              );
-            }
-            return Column(
-              children: [
-                for (final d in saved) ...[
-                  DestinationCard(
-                    image: d.image,
-                    title: d.title,
-                    region: d.region,
-                    rating: d.rating,
-                    reviewCount: d.reviewCount,
-                    duration: d.duration,
-                    badge: d.badge,
-                    weather: (
-                      condition: weatherConditionFromKorean(d.weatherLabel),
-                      temp: d.weatherTemp,
+      body: _tab == 0
+          ? AsyncView<Paged<LikedPlace>>(
+              value: myPage.likedPlaces,
+              loadingHeight: 220,
+              onRetry: () =>
+                  ref.read(myPageProvider.notifier).loadLikedPlaces(),
+              isEmpty: (paged) => paged.isEmpty,
+              emptyMessage: '아직 찜한 여행지가 없어요.\n하트를 눌러 저장해보세요.',
+              builder: (paged) => Column(
+                children: [
+                  for (final place in paged.items) ...[
+                    _SimpleRow(
+                      icon: Icons.favorite_rounded,
+                      title: place.name,
+                      onTap: () => context.push(
+                        DetailPage(destinationId: place.placeId),
+                      ),
                     ),
-                    onTap: () => context.push(DetailPage(destinationId: d.id)),
-                  ),
-                  const SizedBox(height: AppSpacing.space4),
+                    const SizedBox(height: AppSpacing.space3),
+                  ],
                 ],
-              ],
-            );
-          }
-
-          if (!favorites.isFav(FavoritesNotifier.routeKey)) {
-            return const _EmptyState(
-              message: '아직 저장한 코스가 없어요.\n코스 화면에서 저장을 눌러보세요.',
-            );
-          }
-          return CourseCard(
-            title: EodiganamData.route.title,
-            summary: EodiganamData.route.summary,
-            stops: EodiganamData.route.steps.length,
-            duration: '6시간',
-            tags: const ['힐링', '자연'],
-            image: EodiganamData.destinations[0].image,
-            onTap: () => context.push(const CoursePage()),
-          );
-        },
-      ),
+              ),
+            )
+          : AsyncView<Paged<SavedCourse>>(
+              value: myPage.savedCourses,
+              loadingHeight: 220,
+              onRetry: () =>
+                  ref.read(myPageProvider.notifier).loadSavedCourses(),
+              isEmpty: (paged) => paged.isEmpty,
+              emptyMessage: '아직 저장한 코스가 없어요.\n코스 화면에서 저장을 눌러보세요.',
+              builder: (paged) => Column(
+                children: [
+                  for (final course in paged.items) ...[
+                    _SimpleRow(
+                      icon: Icons.route_rounded,
+                      title: course.name,
+                      onTap: () =>
+                          context.push(CoursePage(courseId: course.courseId)),
+                    ),
+                    const SizedBox(height: AppSpacing.space3),
+                  ],
+                ],
+              ),
+            ),
     );
   }
 }
 
-class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.message});
+/// 서버가 이름과 id 만 내려주는 목록(찜/저장 코스)에 쓰는 한 줄 카드.
+class _SimpleRow extends StatelessWidget {
+  const _SimpleRow({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+  });
 
-  final String message;
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.space8),
-      child: Column(
-        children: [
-          const Icon(
-            Icons.favorite_border_rounded,
-            size: 40,
-            color: AppColors.textTertiary,
-          ),
-          const SizedBox(height: AppSpacing.space3),
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: AppTextStyle.body.copyWith(color: AppColors.textTertiary),
-          ),
-        ],
+    return GestureDetector(
+      onTap: onTap,
+      child: AppCard(
+        padding: const EdgeInsets.all(AppSpacing.space4),
+        child: Row(
+          children: [
+            Icon(icon, size: 20, color: AppColors.brandPrimary),
+            const SizedBox(width: AppSpacing.space3),
+            Expanded(
+              child: Text(
+                title,
+                style: AppTextStyle.body.copyWith(fontWeight: AppFont.semibold),
+              ),
+            ),
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.textTertiary,
+            ),
+          ],
+        ),
       ),
     );
   }

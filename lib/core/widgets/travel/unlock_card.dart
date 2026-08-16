@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../display/app_network_image.dart';
+
 import '../../constants/color.dart';
 import '../../constants/font.dart';
 import '../../constants/radius.dart';
@@ -125,7 +127,7 @@ class UnlockCard extends StatelessWidget {
                               0.55,
                               0,
                             ]),
-                      child: Image.network(image, fit: BoxFit.cover),
+                      child: AppNetworkImage(url: image),
                     ),
                     Positioned(
                       top: 8,

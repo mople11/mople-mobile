@@ -7,6 +7,7 @@ export 'auth/auth_models.dart';
 export 'common/api_response.dart';
 export 'common/geo_point.dart';
 export 'common/json_utils.dart';
+export 'common/pagination.dart';
 export 'course/course_models.dart';
 export 'gamification/gamification_models.dart';
 export 'home/home_models.dart';

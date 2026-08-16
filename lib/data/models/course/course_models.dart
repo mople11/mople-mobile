@@ -240,14 +240,15 @@ class CourseCompleteRequest {
 
 /// `POST /courses/{courseId}/complete` 의 `data`.
 class CourseCompleteResult {
-  const CourseCompleteResult({required this.completed, required this.cardId});
+  const CourseCompleteResult({required this.completed, this.cardId});
 
   final bool completed;
-  final String cardId;
+  /// 스키마상 nullable — 완주는 됐지만 카드가 아직 안 만들어진 경우가 있다.
+  final String? cardId;
 
   factory CourseCompleteResult.fromJson(Map<String, dynamic> json) =>
       CourseCompleteResult(
         completed: asBool(json['completed']),
-        cardId: asString(json['cardId']),
+        cardId: asStringOrNull(json['cardId']),
       );
 }

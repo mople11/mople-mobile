@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mople_mobile/data/mock/mock_api.dart';
 import 'package:mople_mobile/data/models/models.dart';
+import 'package:mople_mobile/data/repositories/repositories.dart';
 import 'package:mople_mobile/presentation/controllers/base/async_result.dart';
 
 /// Home 범위(`GET /home`, `GET /weather/current`) 상태.
@@ -45,7 +45,9 @@ class HomeNotifier extends Notifier<HomeState> {
   Future<void> loadHome({double? lat, double? lng}) async {
     if (lat != null && lng != null) setLocation(lat: lat, lng: lng);
     state = state.copyWith(home: const AsyncLoading());
-    final result = await guardAsync(() => mockApi.fetchHome(state.location));
+    final result = await guardAsync(
+      () => homeRepository.fetchHome(state.location),
+    );
     state = state.copyWith(home: result);
   }
 
@@ -53,7 +55,7 @@ class HomeNotifier extends Notifier<HomeState> {
     if (lat != null && lng != null) setLocation(lat: lat, lng: lng);
     state = state.copyWith(weather: const AsyncLoading());
     final result = await guardAsync(
-      () => mockApi.fetchCurrentWeather(state.location),
+      () => homeRepository.fetchCurrentWeather(state.location),
     );
     state = state.copyWith(weather: result);
   }

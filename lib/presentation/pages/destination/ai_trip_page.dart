@@ -7,352 +7,249 @@ import 'package:mople_mobile/core/constants/radius.dart';
 import 'package:mople_mobile/core/constants/spacing.dart';
 import 'package:mople_mobile/core/mock/eodiganam_data.dart';
 import 'package:mople_mobile/core/widgets/widgets.dart';
-import 'package:mople_mobile/presentation/controllers/ai_trip_controller.dart';
+import 'package:mople_mobile/data/models/models.dart';
+import 'package:mople_mobile/presentation/controllers/base/async_result.dart';
+import 'package:mople_mobile/presentation/controllers/course_controller.dart';
 import 'package:mople_mobile/presentation/pages/destination/course_page.dart';
 
-class AiTripPage extends ConsumerWidget {
+/// AI 맞춤 코스 — `POST /recommend/ai`.
+///
+/// 입력(기분/동행/이동수단/시간)을 모아 요청하고, 결과를 코스 상세로 연결한다.
+class AiTripPage extends ConsumerStatefulWidget {
   const AiTripPage({super.key, this.initialMood});
 
   final String? initialMood;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final c = ref.watch(aiTripProvider(initialMood));
-    final notifier = ref.read(aiTripProvider(initialMood).notifier);
-
-    return AppDetailScaffold(
-      title: switch (c.step) {
-        AiTripStep.input => 'AI 맞춤 코스',
-        AiTripStep.loading => 'AI 코스 생성',
-        AiTripStep.result => 'AI 추천 코스',
-      },
-      onBack: () {
-        if (c.step == AiTripStep.input) {
-          context.pop();
-        } else {
-          notifier.backToInput();
-        }
-      },
-      scrollable: false,
-      bodyPadding: EdgeInsets.zero,
-      body: _buildBody(context, c, notifier),
-    );
-  }
-
-  Widget _buildBody(
-    BuildContext context,
-    AiTripState c,
-    AiTripNotifier notifier,
-  ) {
-    switch (c.step) {
-      case AiTripStep.loading:
-        return const Center(
-          child: Padding(
-            padding: EdgeInsets.all(AppSpacing.space8),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-                  width: 52,
-                  height: 52,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 3,
-                    color: AppColors.brandPrimary,
-                  ),
-                ),
-                SizedBox(height: AppSpacing.space5),
-                Text(
-                  '딱 맞는 코스를 짜고 있어요',
-                  style: AppTextStyle.bodyLg,
-                  textAlign: TextAlign.center,
-                ),
-                SizedBox(height: AppSpacing.space2),
-                Text(
-                  '날씨 · 기분 · 이동수단을 분석 중이에요…',
-                  style: AppTextStyle.caption,
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-        );
-      case AiTripStep.result:
-        final route = EodiganamData.route;
-        return SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.space5,
-            vertical: AppSpacing.space4,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.space3,
-                  vertical: 5,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.fillBrandSoft,
-                  borderRadius: AppRadius.radiusPill,
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.check_rounded,
-                      size: 13,
-                      color: AppColors.textBrand,
-                    ),
-                    const SizedBox(width: 5),
-                    Text(
-                      '96% 일치하는 코스를 찾았어요',
-                      style: AppTextStyle.small.copyWith(
-                        color: AppColors.textBrand,
-                        fontWeight: AppFont.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSpacing.space3),
-              Text(
-                '${c.moodLabel} · ${c.companion} · ${c.hours.round()}시간 기준으로 추천했어요',
-                style: AppTextStyle.caption.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.space3),
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.space5),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceCard,
-                  border: Border.all(color: AppColors.borderSubtle),
-                  borderRadius: AppRadius.radiusLg,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const WeatherChip(
-                          condition: WeatherCondition.sunny,
-                          temp: 24,
-                        ),
-                        const SizedBox(width: AppSpacing.space2),
-                        const AppBadge(label: '힐링', tone: AppTone.green),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.space2),
-                    Text(route.title, style: AppTextStyle.h3),
-                    const SizedBox(height: 4),
-                    Text(
-                      route.summary,
-                      style: AppTextStyle.caption.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.space4),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.explore_rounded,
-                          size: 14,
-                          color: AppColors.textSecondary,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${route.steps.length}곳',
-                          style: AppTextStyle.caption.copyWith(
-                            color: AppColors.textSecondary,
-                            fontWeight: AppFont.semibold,
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.space4),
-                        const Icon(
-                          Icons.navigation_rounded,
-                          size: 14,
-                          color: AppColors.textSecondary,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          route.distance,
-                          style: AppTextStyle.caption.copyWith(
-                            color: AppColors.textSecondary,
-                            fontWeight: AppFont.semibold,
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.space4),
-                        const Icon(
-                          Icons.account_balance_wallet_rounded,
-                          size: 14,
-                          color: AppColors.textSecondary,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          route.cost,
-                          style: AppTextStyle.caption.copyWith(
-                            color: AppColors.textSecondary,
-                            fontWeight: AppFont.semibold,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.space4),
-                    RouteStepList(steps: route.steps),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSpacing.space4),
-              AppButton(
-                label: '이 코스 자세히 보기',
-                width: double.infinity,
-                size: AppButtonSize.lg,
-                onPressed: () => context.push(const CoursePage()),
-              ),
-              const SizedBox(height: AppSpacing.space2),
-              AppButton(
-                label: '다시 추천받기',
-                variant: AppButtonVariant.ghost,
-                width: double.infinity,
-                onPressed: notifier.backToInput,
-              ),
-            ],
-          ),
-        );
-      case AiTripStep.input:
-        return SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.space5,
-            vertical: AppSpacing.space4,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '어떤 여행을 원하세요?',
-                style: AppTextStyle.bodyLg.copyWith(fontWeight: AppFont.bold),
-              ),
-              const SizedBox(height: AppSpacing.space3),
-              MoodSelector(
-                columns: 3,
-                value: c.moods.isEmpty ? null : c.moods.first,
-                options: EodiganamData.moods,
-                onChanged: notifier.setMood,
-              ),
-              const SizedBox(height: AppSpacing.space6),
-              Text(
-                '누구와 함께 가나요?',
-                style: AppTextStyle.bodyLg.copyWith(fontWeight: AppFont.bold),
-              ),
-              const SizedBox(height: AppSpacing.space3),
-              _CompanionGrid(
-                companion: c.companion,
-                onSelect: notifier.setCompanion,
-              ),
-              const SizedBox(height: AppSpacing.space5),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.space4,
-                  vertical: AppSpacing.space4,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceCard,
-                  border: Border.all(color: AppColors.borderSubtle),
-                  borderRadius: AppRadius.radiusLg,
-                ),
-                child: AppSlider(
-                  label: '여행 시간',
-                  value: c.hours,
-                  min: 2,
-                  max: 12,
-                  formatValue: (v) => '${v.round()}시간',
-                  onChanged: notifier.setHours,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.space6),
-              AppButton(
-                label: 'AI 코스 생성하기',
-                width: double.infinity,
-                size: AppButtonSize.lg,
-                onPressed: notifier.generate,
-              ),
-            ],
-          ),
-        );
-    }
-  }
+  ConsumerState<AiTripPage> createState() => _AiTripPageState();
 }
 
-class _CompanionGrid extends StatelessWidget {
-  const _CompanionGrid({required this.companion, required this.onSelect});
+class _AiTripPageState extends ConsumerState<AiTripPage> {
+  final _freeTextController = TextEditingController();
 
-  final String companion;
-  final ValueChanged<String> onSelect;
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      if (!mounted) return;
+      final notifier = ref.read(courseProvider.notifier);
+      // courseProvider 는 전역이라 이전 방문의 추천 결과가 남아 있다. 그대로 두면
+      // 화면에 들어오자마자 지난 결과(또는 실패 화면)가 떠서 입력 폼을 볼 수 없다.
+      notifier.resetPlan();
+      final mood = widget.initialMood;
+      if (mood != null) notifier.setMood(mood);
+    });
+  }
 
-  static const _options = [
-    ('연인', Icons.favorite_rounded),
-    ('가족', Icons.groups_rounded),
-    ('친구', Icons.group_add_rounded),
-    ('혼자', Icons.person_rounded),
-  ];
+  @override
+  void dispose() {
+    _freeTextController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _request() async {
+    final notifier = ref.read(courseProvider.notifier);
+    notifier.setFreeText(
+      _freeTextController.text.trim().isEmpty
+          ? null
+          : _freeTextController.text.trim(),
+    );
+    await notifier.requestRecommendation();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: AppSpacing.space3,
-      crossAxisSpacing: AppSpacing.space3,
-      childAspectRatio: 2.4,
+    final state = ref.watch(courseProvider);
+    final recommendation = state.recommendation;
+    final hasResult = recommendation?.hasValue ?? false;
+
+    return AppDetailScaffold(
+      title: hasResult ? 'AI 추천 코스' : 'AI 맞춤 코스',
+      onBack: () => context.pop(),
+      body: recommendation == null
+          ? _buildForm(state)
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                AsyncView<AiCourseRecommendation>(
+                  value: recommendation,
+                  loadingHeight: 320,
+                  onRetry: _request,
+                  builder: (result) => _buildResult(result),
+                ),
+                // 실패했을 때도 조건을 바꿔 다시 시도할 수 있어야 한다.
+                // 이 통로가 없으면 재시도 외에는 화면을 벗어날 방법이 없다.
+                if (recommendation.hasError) ...[
+                  const SizedBox(height: AppSpacing.space4),
+                  AppButton(
+                    label: '조건 다시 고르기',
+                    variant: AppButtonVariant.outline,
+                    width: double.infinity,
+                    onPressed: () =>
+                        ref.read(courseProvider.notifier).resetPlan(),
+                  ),
+                ],
+              ],
+            ),
+    );
+  }
+
+  Widget _buildForm(CourseState state) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        for (final (label, icon) in _options)
-          Material(
-            color: companion == label
-                ? AppColors.fillBrandSoft
-                : AppColors.surfaceCard,
-            borderRadius: AppRadius.radiusMd,
-            child: InkWell(
-              onTap: () => onSelect(label),
-              borderRadius: AppRadius.radiusMd,
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: AppRadius.radiusMd,
-                  border: Border.all(
-                    color: companion == label
-                        ? AppColors.brandPrimary
-                        : AppColors.borderSubtle,
-                    width: companion == label ? 2 : 1,
+        Text(
+          '오늘 기분은 어떠세요?',
+          style: AppTextStyle.bodyLg.copyWith(fontWeight: AppFont.bold),
+        ),
+        const SizedBox(height: AppSpacing.space3),
+        MoodSelector(
+          columns: 3,
+          value: state.mood,
+          options: EodiganamData.moods.take(6).toList(),
+          onChanged: ref.read(courseProvider.notifier).setMood,
+        ),
+        const SizedBox(height: AppSpacing.space5),
+        Text(
+          '누구와 함께 가나요?',
+          style: AppTextStyle.bodyLg.copyWith(fontWeight: AppFont.bold),
+        ),
+        const SizedBox(height: AppSpacing.space3),
+        Wrap(
+          spacing: AppSpacing.space2,
+          runSpacing: AppSpacing.space2,
+          children: [
+            for (final companion in Companion.values)
+              FilterPill(
+                label: companion.value,
+                active: state.companion == companion,
+                onTap: () =>
+                    ref.read(courseProvider.notifier).setCompanion(companion),
+              ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.space5),
+        Text(
+          '이동수단',
+          style: AppTextStyle.bodyLg.copyWith(fontWeight: AppFont.bold),
+        ),
+        const SizedBox(height: AppSpacing.space3),
+        Wrap(
+          spacing: AppSpacing.space2,
+          runSpacing: AppSpacing.space2,
+          children: [
+            for (final transport in Transport.values)
+              FilterPill(
+                label: transport.value,
+                active: state.transport == transport,
+                onTap: () =>
+                    ref.read(courseProvider.notifier).setTransport(transport),
+              ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.space5),
+        AppTextField(
+          label: '추가 요청 (선택)',
+          placeholder: '예) 사진 찍기 좋은 곳 위주로',
+          controller: _freeTextController,
+        ),
+        const SizedBox(height: AppSpacing.space6),
+        AppButton(
+          label: 'AI 코스 만들기',
+          width: double.infinity,
+          size: AppButtonSize.lg,
+          leading: const Icon(
+            Icons.auto_awesome_rounded,
+            size: 18,
+            color: AppColors.neutral0,
+          ),
+          onPressed: state.canRecommend ? _request : null,
+        ),
+        if (!state.canRecommend) ...[
+          const SizedBox(height: AppSpacing.space2),
+          Text(
+            '기분을 먼저 선택해주세요.',
+            style: AppTextStyle.caption.copyWith(color: AppColors.textTertiary),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildResult(AiCourseRecommendation result) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(AppSpacing.space5),
+          decoration: BoxDecoration(
+            color: AppColors.fillBrandSoft,
+            borderRadius: AppRadius.radiusLg,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(result.name, style: AppTextStyle.h3),
+              if (result.reason.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.space2),
+                Text(
+                  result.reason,
+                  style: AppTextStyle.body.copyWith(
+                    color: AppColors.textSecondary,
+                    height: 1.6,
                   ),
                 ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpacing.space5),
+        Text(
+          '방문 순서',
+          style: AppTextStyle.bodyLg.copyWith(fontWeight: AppFont.bold),
+        ),
+        const SizedBox(height: AppSpacing.space3),
+        for (final place in result.places) ...[
+          Row(
+            children: [
+              Container(
+                width: 26,
+                height: 26,
                 alignment: Alignment.center,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      icon,
-                      size: 18,
-                      color: companion == label
-                          ? AppColors.textBrand
-                          : AppColors.textPrimary,
-                    ),
-                    const SizedBox(width: AppSpacing.space2),
-                    Text(
-                      label,
-                      style: AppTextStyle.body.copyWith(
-                        fontWeight: companion == label
-                            ? AppFont.bold
-                            : AppFont.medium,
-                        color: companion == label
-                            ? AppColors.textBrand
-                            : AppColors.textPrimary,
-                      ),
-                    ),
-                  ],
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.brandPrimary,
+                ),
+                child: Text(
+                  '${place.order}',
+                  style: AppTextStyle.small.copyWith(
+                    color: AppColors.textOnBrand,
+                    fontWeight: AppFont.bold,
+                  ),
                 ),
               ),
-            ),
+              const SizedBox(width: AppSpacing.space3),
+              Text('장소 ${place.placeId}', style: AppTextStyle.body),
+            ],
           ),
+          const SizedBox(height: AppSpacing.space3),
+        ],
+        const SizedBox(height: AppSpacing.space4),
+        AppButton(
+          label: '코스 상세 보기',
+          width: double.infinity,
+          size: AppButtonSize.lg,
+          onPressed: () =>
+              context.push(CoursePage(courseId: result.courseId)),
+        ),
+        const SizedBox(height: AppSpacing.space3),
+        AppButton(
+          label: '다시 추천받기',
+          variant: AppButtonVariant.outline,
+          width: double.infinity,
+          onPressed: () => ref.read(courseProvider.notifier).resetPlan(),
+        ),
       ],
     );
   }

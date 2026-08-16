@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mople_mobile/data/mock/mock_api.dart';
 import 'package:mople_mobile/data/models/models.dart';
+import 'package:mople_mobile/data/repositories/repositories.dart';
 import 'package:mople_mobile/presentation/controllers/base/async_result.dart';
 
 /// 실시간 교통 혼잡 안내(`GET /traffic/congestion`) 상태.
@@ -50,9 +50,8 @@ class TrafficNotifier extends Notifier<TrafficState> {
       destination: state.destination!,
     );
     state = state.copyWith(traffic: const AsyncLoading());
-    state = state.copyWith(
-      traffic: await guardAsync(() => mockApi.fetchTraffic(query)),
-    );
+    final result = await guardAsync(() => placeRepository.fetchTraffic(query));
+    state = state.copyWith(traffic: result);
   }
 }
 

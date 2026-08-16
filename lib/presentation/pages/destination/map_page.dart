@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mople_mobile/core/navigation/app_navigation.dart';
 import 'package:mople_mobile/core/constants/color.dart';
 import 'package:mople_mobile/core/constants/font.dart';
@@ -7,14 +8,49 @@ import 'package:mople_mobile/core/constants/shadow.dart';
 import 'package:mople_mobile/core/constants/spacing.dart';
 import 'package:mople_mobile/core/mock/eodiganam_data.dart';
 import 'package:mople_mobile/core/widgets/widgets.dart';
+import 'package:mople_mobile/data/models/models.dart';
+import 'package:mople_mobile/presentation/controllers/traffic_controller.dart';
 import 'package:mople_mobile/presentation/pages/destination/course_page.dart';
 
-class MapPage extends StatelessWidget {
-  const MapPage({super.key});
+/// 동선 지도.
+///
+/// 지도 자체는 아직 목업이고, 출발/도착 좌표가 넘어오면 상단 배너에
+/// 실시간 교통 정보(`GET /traffic/congestion`)를 띄운다.
+class MapPage extends ConsumerStatefulWidget {
+  const MapPage({super.key, this.origin, this.destination});
+
+  final GeoPoint? origin;
+  final GeoPoint? destination;
+
+  @override
+  ConsumerState<MapPage> createState() => _MapPageState();
+}
+
+class _MapPageState extends ConsumerState<MapPage> {
+  @override
+  void initState() {
+    super.initState();
+    final to = widget.destination;
+    if (to == null) return;
+    // 출발지는 위치 권한이 없으면 알 수 없으므로, 홈/날씨와 같은 기준점을 쓴다.
+    // 여기서 origin 이 없다고 건너뛰면 교통 정보가 영영 로드되지 않는다.
+    final from =
+        widget.origin ??
+        GeoPoint(
+          lat: LocationQuery.fallback.lat,
+          lng: LocationQuery.fallback.lng,
+        );
+    Future.microtask(() {
+      final notifier = ref.read(trafficProvider.notifier);
+      notifier.setRoute(from: from, to: to);
+      notifier.load();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final route = EodiganamData.route;
+    final traffic = ref.watch(trafficProvider);
 
     return Scaffold(
       backgroundColor: AppColors.surfacePage,
@@ -87,7 +123,12 @@ class MapPage extends StatelessWidget {
                     const SizedBox(width: AppSpacing.space2),
                     Expanded(
                       child: Text(
-                        '${route.steps.first.title} → ${route.steps.last.title}',
+                        // 교통 정보를 받아왔으면 구간 상태를, 아니면 코스 요약을 보여준다.
+                        traffic.segments.isEmpty
+                            ? '${route.steps.first.title} → ${route.steps.last.title}'
+                            : traffic.segments
+                                  .map((s) => s.section)
+                                  .join(' · '),
                         style: AppTextStyle.caption.copyWith(
                           fontWeight: AppFont.semibold,
                         ),
@@ -95,7 +136,9 @@ class MapPage extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      route.distance.replaceAll('약 ', ''),
+                      traffic.etaMin == null
+                          ? route.distance.replaceAll('약 ', '')
+                          : '${traffic.etaMin}분',
                       style: AppTextStyle.caption.copyWith(
                         color: AppColors.textTertiary,
                         fontWeight: AppFont.semibold,

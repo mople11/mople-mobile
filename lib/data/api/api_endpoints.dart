@@ -3,7 +3,7 @@
 /// 여기에는 경로/기본 URL 만 둔다. 실제 통신(Dio 클라이언트, 인터셉터, repository)은
 /// 연동 단계에서 별도로 추가한다.
 abstract final class ApiEndpoints {
-  static const localBaseUrl = 'http://localhost:8000/api/v1';
+  static const localBaseUrl = 'https://eodiganam.duckdns.org/api/v1';
 
   /// 배포 예정 주소(변경될 수 있음).
   static const remoteBaseUrl = 'https://api-odiganam.duckdns.org/api/v1';

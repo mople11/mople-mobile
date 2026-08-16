@@ -6,10 +6,17 @@ import 'package:mople_mobile/core/constants/font.dart';
 import 'package:mople_mobile/core/constants/radius.dart';
 import 'package:mople_mobile/core/constants/spacing.dart';
 import 'package:mople_mobile/core/widgets/widgets.dart';
+import 'package:mople_mobile/data/models/models.dart';
+import 'package:mople_mobile/presentation/controllers/auth_controller.dart';
 import 'package:mople_mobile/presentation/controllers/main_tab_controller.dart';
+import 'package:mople_mobile/presentation/controllers/settings_controller.dart';
 import 'package:mople_mobile/presentation/pages/auth/login_page.dart';
 import 'package:mople_mobile/presentation/pages/my/profile_edit_page.dart';
 
+/// 앱 설정 — `GET /settings`, `PATCH /settings`.
+///
+/// 서버가 다루는 항목(푸시·골든아워 알림, 언어, 위치 권한)만 실제로 저장되고,
+/// 그 밖의 항목은 아직 서버 스펙이 없어 화면 안에서만 유지된다.
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
 
@@ -18,10 +25,7 @@ class SettingsPage extends ConsumerStatefulWidget {
 }
 
 class _SettingsPageState extends ConsumerState<SettingsPage> {
-  String _lang = '한국어';
-  bool _tripAlert = true;
-  bool _weatherAlert = true;
-  bool _reviewAlert = false;
+  // ── 서버에 저장되지 않는 로컬 전용 항목 ──────────────────
   bool _rainPreference = true;
   String _region = '순천시';
   String _transport = '자동차';
@@ -29,8 +33,40 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   static const _regions = ['순천시', '여수시', '담양군', '보성군', '완도군', '목포시'];
   static const _transports = ['자동차', '대중교통', '도보', '자전거'];
 
+  static const _languageLabels = {
+    AppLanguage.ko: '한국어',
+    AppLanguage.en: 'English',
+    AppLanguage.ja: '日本語',
+    AppLanguage.zh: '中文',
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() => ref.read(settingsProvider.notifier).load());
+  }
+
   void _flash(String message) {
     AppToast.show(context, title: '알림', message: message);
+  }
+
+  /// 서버 저장 결과에 따라 성공/실패 토스트를 띄운다.
+  Future<void> _patch(Future<bool> Function() action, String label) async {
+    final ok = await action();
+    if (!mounted) return;
+    if (ok) {
+      _flash(label);
+    } else {
+      final error = ref.read(settingsProvider).updateAction;
+      AppToast.show(
+        context,
+        title: '저장 실패',
+        message: error?.error is ApiError
+            ? (error!.error as ApiError).displayMessage
+            : '설정을 저장하지 못했어요.',
+        tone: AppToastTone.danger,
+      );
+    }
   }
 
   void _comingSoon(String feature) {
@@ -45,7 +81,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   void _confirmLogout() {
     AppDialog.confirmLogout(
       context,
-      onConfirm: () {
+      onConfirm: () async {
+        await ref.read(authProvider.notifier).logout();
+        if (!mounted) return;
         ref.read(mainTabProvider.notifier).switchTab('home');
         context.pushAndRemoveAll(const LoginPage());
       },
@@ -100,6 +138,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final settings = ref.watch(settingsProvider);
+    final notifier = ref.read(settingsProvider.notifier);
+
     return AppDetailScaffold(
       title: '설정',
       onBack: () => context.pop(),
@@ -110,33 +151,64 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             title: '알림',
             rows: [
               _SettingsRow(
-                label: '여행 추천 알림',
+                label: '푸시 알림',
                 trailing: Switch(
-                  value: _tripAlert,
-                  onChanged: (v) {
-                    setState(() => _tripAlert = v);
-                    _flash(v ? '여행 추천 알림을 켰어요.' : '여행 추천 알림을 꺼요.');
-                  },
+                  value: settings.pushEnabled,
+                  onChanged: (v) => _patch(
+                    () => notifier.setPush(v),
+                    v ? '푸시 알림을 켰어요.' : '푸시 알림을 꺼요.',
+                  ),
                 ),
               ),
               _SettingsRow(
-                label: '날씨 변화 알림',
+                label: '골든아워 알림',
                 trailing: Switch(
-                  value: _weatherAlert,
-                  onChanged: (v) {
-                    setState(() => _weatherAlert = v);
-                    _flash(v ? '날씨 변화 알림을 켰어요.' : '날씨 변화 알림을 꺼요.');
-                  },
+                  value: settings.goldenHourEnabled,
+                  onChanged: (v) => _patch(
+                    () => notifier.setGoldenHour(v),
+                    v ? '골든아워 알림을 켰어요.' : '골든아워 알림을 꺼요.',
+                  ),
                 ),
               ),
               _SettingsRow(
-                label: '리뷰 · 좋아요 알림',
+                label: '위치 권한',
                 trailing: Switch(
-                  value: _reviewAlert,
-                  onChanged: (v) {
-                    setState(() => _reviewAlert = v);
-                    _flash(v ? '리뷰 알림을 켰어요.' : '리뷰 알림을 꺼요.');
+                  value: settings.locationGranted,
+                  onChanged: (v) => _patch(
+                    () => notifier.setLocationPermission(v),
+                    v ? '위치 권한을 허용했어요.' : '위치 권한을 껐어요.',
+                  ),
+                ),
+              ),
+              _SettingsRow(
+                label: '언어',
+                onTap: () => _pickOption(
+                  title: '언어',
+                  options: _languageLabels.values.toList(),
+                  value: _languageLabels[settings.language] ?? '한국어',
+                  onSelected: (label) {
+                    final lang = _languageLabels.entries
+                        .firstWhere((e) => e.value == label)
+                        .key;
+                    _patch(
+                      () => notifier.setLanguage(lang),
+                      '언어를 $label(으)로 변경했어요.',
+                    );
                   },
+                ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      _languageLabels[settings.language] ?? '한국어',
+                      style: const TextStyle(color: AppColors.textTertiary),
+                    ),
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      size: 15,
+                      color: AppColors.textTertiary,
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -218,56 +290,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   Icons.chevron_right_rounded,
                   size: 16,
                   color: AppColors.textTertiary,
-                ),
-              ),
-              _SettingsRow(
-                label: '언어',
-                trailing: Container(
-                  padding: const EdgeInsets.all(3),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceSunken,
-                    borderRadius: AppRadius.radiusPill,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      for (final l in ['한국어', 'English'])
-                        GestureDetector(
-                          onTap: () {
-                            if (l == _lang) return;
-                            setState(() => _lang = l);
-                            _flash(
-                              l == 'English'
-                                  ? 'Language changed to English.'
-                                  : '언어가 한국어로 변경됐어요.',
-                            );
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: AppSpacing.space3,
-                              vertical: 5,
-                            ),
-                            decoration: BoxDecoration(
-                              color: _lang == l
-                                  ? AppColors.surfaceCard
-                                  : Colors.transparent,
-                              borderRadius: AppRadius.radiusPill,
-                            ),
-                            child: Text(
-                              l,
-                              style: AppTextStyle.small.copyWith(
-                                fontWeight: _lang == l
-                                    ? AppFont.bold
-                                    : AppFont.medium,
-                                color: _lang == l
-                                    ? AppColors.textPrimary
-                                    : AppColors.textTertiary,
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
                 ),
               ),
               const _SettingsRow(

@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mople_mobile/data/mock/mock_api.dart';
 import 'package:mople_mobile/data/models/models.dart';
+import 'package:mople_mobile/data/repositories/repositories.dart';
 import 'package:mople_mobile/presentation/controllers/base/async_result.dart';
 
 /// 후기·만족도 범위(`/reviews/**`) 상태.
@@ -27,7 +27,7 @@ class ReviewBoardState {
   final String targetId;
 
   final ReviewSort sort;
-  final AsyncValue<List<Review>>? reviews;
+  final AsyncValue<Paged<Review>>? reviews;
   final AsyncValue<ReviewSummary>? summary;
 
   // ── 작성 폼 ───────────────────────────────────────────────
@@ -63,7 +63,7 @@ class ReviewBoardState {
 
   ReviewBoardState copyWith({
     ReviewSort? sort,
-    AsyncValue<List<Review>>? reviews,
+    AsyncValue<Paged<Review>>? reviews,
     AsyncValue<ReviewSummary>? summary,
     double? draftRating,
     String? draftText,
@@ -107,22 +107,39 @@ class ReviewBoardNotifier extends Notifier<ReviewBoardState> {
   Future<void> loadReviews() async {
     final query = ReviewListQuery(targetId: targetId, sort: state.sort);
     state = state.copyWith(reviews: const AsyncLoading());
-    state = state.copyWith(
-      reviews: await guardAsync(() => mockApi.fetchReviews(query)),
-    );
+    final result = await guardAsync(() => reviewRepository.fetchReviews(query));
+    state = state.copyWith(reviews: result);
   }
 
   Future<void> loadSummary() async {
     state = state.copyWith(summary: const AsyncLoading());
-    state = state.copyWith(
-      summary: await guardAsync(() => mockApi.fetchReviewSummary(targetId)),
+    final result = await guardAsync(
+      () => reviewRepository.fetchReviewSummary(targetId),
     );
+    state = state.copyWith(summary: result);
   }
 
   Future<void> changeSort(ReviewSort value) async {
     if (state.sort == value) return;
     state = state.copyWith(sort: value);
     await loadReviews();
+  }
+
+  /// 다음 페이지를 이어 붙인다(무한 스크롤). 더 없으면 아무 것도 하지 않는다.
+  Future<void> loadMoreReviews() async {
+    final current = state.reviews?.value;
+    if (current == null || !current.hasMore) return;
+    final query = ReviewListQuery(targetId: targetId, sort: state.sort);
+    final next = await guardAsync(
+      () => reviewRepository.fetchReviews(
+        query,
+        page: PageQuery(page: current.pagination.nextPage),
+      ),
+    );
+    final value = next.value;
+    if (value != null) {
+      state = state.copyWith(reviews: AsyncData(current.append(value)));
+    }
   }
 
   // ── 작성 ─────────────────────────────────────────────────
@@ -173,20 +190,30 @@ class ReviewBoardNotifier extends Notifier<ReviewBoardState> {
     );
   }
 
-  /// `RATING_REQUIRED` 를 먼저 검증한 뒤 등록한다.
+  /// 서버로 보내기 전에 필수값을 검증한다.
+  ///
+  /// 별점과 본문은 실패 사유가 다르므로 각각 다른 메시지를 돌려준다.
+  /// 하나로 뭉뚱그리면 이미 채운 별점을 다시 만지게 만든다.
   Future<ReviewCreateResult?> submit() async {
     final request = state.draft;
-    if (!request.isValid) {
+    final ApiError? invalid = switch (request) {
+      _ when request.rating <= 0 => ApiError.local(ApiErrorCode.ratingRequired),
+      _ when !request.hasText => ApiError.local(
+        ApiErrorCode.validation,
+        '후기 내용을 입력해주세요.',
+      ),
+      _ => null,
+    };
+    if (invalid != null) {
       state = state.copyWith(
-        submitState: AsyncError(
-          ApiError.local(ApiErrorCode.ratingRequired),
-          StackTrace.current,
-        ),
+        submitState: AsyncError(invalid, StackTrace.current),
       );
       return null;
     }
     state = state.copyWith(submitState: const AsyncLoading());
-    final result = await guardAsync(() => mockApi.createReview(request));
+    final result = await guardAsync(
+      () => reviewRepository.createReview(request),
+    );
     state = state.copyWith(submitState: result);
     if (result.value != null) {
       clearDraft();
@@ -211,7 +238,7 @@ class ReviewBoardNotifier extends Notifier<ReviewBoardState> {
   Future<void> markHelpful(String reviewId) async {
     state = state.copyWith(helpfulAction: const AsyncLoading());
     final result = await guardAsync(() async {
-      final count = await mockApi.markReviewHelpful(reviewId);
+      final count = await reviewRepository.markReviewHelpful(reviewId);
       state = state.copyWith(
         helpfulCounts: {...state.helpfulCounts, reviewId: count},
       );
@@ -223,7 +250,7 @@ class ReviewBoardNotifier extends Notifier<ReviewBoardState> {
     final request = ReviewReportRequest(reason: reason);
     state = state.copyWith(reportAction: const AsyncLoading());
     final result = await guardAsync(
-      () => mockApi.reportReview(reviewId, request),
+      () => reviewRepository.reportReview(reviewId, request),
     );
     state = state.copyWith(reportAction: result);
     return !result.hasError;

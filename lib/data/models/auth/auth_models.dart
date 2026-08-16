@@ -1,9 +1,11 @@
 import 'package:mople_mobile/data/models/common/json_utils.dart';
 
 /// `POST /auth/login/social` 의 provider.
+///
+/// 서버 스키마(`ProviderEnum`)는 `google` 도 받지만, 제품 결정상 앱은 카카오만
+/// 지원한다. 그래서 로그인 화면에도 카카오 버튼만 둔다.
 enum SocialProvider {
-  google('google'),
-  github('github');
+  kakao('kakao');
 
   const SocialProvider(this.value);
 
@@ -132,23 +134,50 @@ class AuthSession {
   );
 }
 
+/// 이메일 인증 용도.
+///
+/// 서버가 `/auth/email/**` 에서 `purpose` 를 필수로 요구한다(빠지면 `COMMON_422`).
+/// 값 집합은 실제 서버 응답으로 확인했다 — 이 둘 외에는 "유효하지 않은 선택"으로 거절된다.
+enum EmailPurpose {
+  signup('signup'),
+  passwordReset('password_reset');
+
+  const EmailPurpose(this.value);
+
+  final String value;
+}
+
 /// `POST /auth/email/verify-code`, `POST /auth/password/reset-request`
+///
+/// `purpose` 는 `/auth/email/verify-code` 에만 필요하고,
+/// `/auth/password/reset-request` 는 없이도 동작하므로 선택 필드로 둔다.
 class EmailRequest {
-  const EmailRequest({required this.email});
+  const EmailRequest({required this.email, this.purpose});
 
   final String email;
+  final EmailPurpose? purpose;
 
-  Map<String, dynamic> toJson() => {'email': email};
+  Map<String, dynamic> toJson() =>
+      compactJson({'email': email, 'purpose': purpose?.value});
 }
 
 /// `POST /auth/email/verify-confirm`
 class EmailVerifyConfirmRequest {
-  const EmailVerifyConfirmRequest({required this.email, required this.code});
+  const EmailVerifyConfirmRequest({
+    required this.email,
+    required this.code,
+    this.purpose = EmailPurpose.signup,
+  });
 
   final String email;
   final String code;
+  final EmailPurpose purpose;
 
-  Map<String, dynamic> toJson() => {'email': email, 'code': code};
+  Map<String, dynamic> toJson() => {
+    'email': email,
+    'code': code,
+    'purpose': purpose.value,
+  };
 }
 
 /// `POST /auth/password/reset-confirm`
