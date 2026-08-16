@@ -47,6 +47,12 @@ abstract final class AuthTokenStore {
   /// 앱 시작 시 1회 호출해 저장된 세션을 메모리로 올린다.
   /// 복원된 세션이 있으면 반환한다.
   static Future<AuthSession?> restore() async {
+    // 삭제에 실패한 세션이 저장소에 남아 있을 수 있다. 되살리면 로그아웃한
+    // 계정으로 다시 로그인되므로 복원하지 않는다.
+    if (_deleteFailed) {
+      debugPrint('[Auth] 이전 삭제 실패로 세션 복원을 건너뜁니다.');
+      return null;
+    }
     try {
       final raw = await _storage.read(key: _sessionKey);
       if (raw == null || raw.isEmpty) return null;
@@ -68,12 +74,23 @@ abstract final class AuthTokenStore {
   }
 
   /// 로그아웃·토큰 만료 시 메모리와 저장소를 모두 비운다.
+  ///
+  /// 삭제에 실패하면 **예외를 그대로 올린다.** 조용히 넘어가면 다음 앱 시작 때
+  /// [restore] 가 지워졌어야 할 세션을 되살려, 로그아웃한 계정으로 다시 로그인된
+  /// 상태가 된다. 그런 경우 [_forceClearedAt] 로 복원을 막는다.
   static Future<void> clear() async {
     _session = null;
     try {
       await _storage.delete(key: _sessionKey);
+      _deleteFailed = false;
     } catch (e) {
       debugPrint('[Auth] 세션 삭제 실패: $e');
+      // 저장소에 남아 있을 수 있으므로 이번 프로세스에서는 복원을 금지한다.
+      _deleteFailed = true;
+      rethrow;
     }
   }
+
+  /// 삭제가 실패한 적이 있으면 true. 이 프로세스에서는 [restore] 를 거부한다.
+  static bool _deleteFailed = false;
 }

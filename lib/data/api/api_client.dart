@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:mople_mobile/data/api/api_endpoints.dart';
@@ -51,7 +53,13 @@ class ApiClient {
           // 화면 전환은 앱 쪽에서 [onUnauthorized] 로 처리한다.
           if (e.response?.statusCode == 401 && AuthTokenStore.hasSession) {
             _log('401 — 저장된 세션을 정리한다.');
-            AuthTokenStore.clear();
+            // 인터셉터는 동기라 기다릴 수 없다. 실패해도 이후 복원은
+            // AuthTokenStore 가 차단하므로 로그만 남기고 넘어간다.
+            unawaited(
+              AuthTokenStore.clear().catchError(
+                (Object e) => _log('세션 삭제 실패(복원은 차단됨): $e'),
+              ),
+            );
             onUnauthorized?.call();
           }
           handler.next(e);

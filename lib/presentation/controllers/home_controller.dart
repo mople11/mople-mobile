@@ -33,10 +33,17 @@ class HomeState {
 }
 
 class HomeNotifier extends Notifier<HomeState> {
+  /// 위치가 바뀔 때마다 증가하는 세대 번호.
+  ///
+  /// 위치 A 로 보낸 요청의 응답이 위치 B 로 바꾼 뒤 도착하면, 화면의 좌표는 B 인데
+  /// 표시되는 날씨·코스는 A 가 되어 어긋난다. 응답을 반영하기 전에 세대를 확인한다.
+  int _generation = 0;
+
   @override
   HomeState build() => const HomeState();
 
   void setLocation({required double lat, required double lng}) {
+    _generation++;
     state = state.copyWith(
       location: LocationQuery(lat: lat, lng: lng),
     );
@@ -44,19 +51,23 @@ class HomeNotifier extends Notifier<HomeState> {
 
   Future<void> loadHome({double? lat, double? lng}) async {
     if (lat != null && lng != null) setLocation(lat: lat, lng: lng);
+    final generation = _generation;
     state = state.copyWith(home: const AsyncLoading());
     final result = await guardAsync(
       () => homeRepository.fetchHome(state.location),
     );
+    if (generation != _generation) return;
     state = state.copyWith(home: result);
   }
 
   Future<void> loadWeather({double? lat, double? lng}) async {
     if (lat != null && lng != null) setLocation(lat: lat, lng: lng);
+    final generation = _generation;
     state = state.copyWith(weather: const AsyncLoading());
     final result = await guardAsync(
       () => homeRepository.fetchCurrentWeather(state.location),
     );
+    if (generation != _generation) return;
     state = state.copyWith(weather: result);
   }
 

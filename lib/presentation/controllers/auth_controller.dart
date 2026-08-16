@@ -266,7 +266,15 @@ class AuthNotifier extends Notifier<AuthState> {
   /// 확실히 끝낸 뒤 상태를 비워야 다음 요청에 옛 토큰이 실리지 않는다.
   Future<void> clearSession() async {
     unawaited(KakaoAuth.logout());
-    await AuthTokenStore.clear();
+    // 저장소 삭제가 실패해도 화면 상태는 반드시 로그아웃으로 만든다.
+    // (AuthTokenStore 가 이후 복원을 차단하므로 세션이 되살아나지는 않는다.)
+    try {
+      await AuthTokenStore.clear();
+    } catch (_) {
+      // 로그는 AuthTokenStore 에서 남긴다.
+    }
+    // 찜 상태 캐시는 계정에 종속되므로 함께 비운다.
+    placeRepository.clearLikedCache();
     state = const AuthState();
   }
 }

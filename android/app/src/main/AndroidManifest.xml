@@ -29,7 +29,7 @@
              scheme 의 kakao{네이티브 앱 키} 는 build.gradle.kts 의
              manifestPlaceholders 에서 주입된다. -->
         <activity
-            android:name="com.kakao.sdk.flutter.AuthCodeCustomTabsActivity"
+            android:name="com.kakao.sdk.flutter.auth.AuthCodeHandlerActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -55,7 +55,7 @@
         <package android:name="com.kakao.talk" />
         <intent>
             <action android:name="android.intent.action.VIEW" />
-            <data android:scheme="kakaokompasauth" />
+            <data android:scheme="kakaokompassauth" />
         </intent>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>

@@ -96,6 +96,12 @@ class CourseState {
 }
 
 class CourseNotifier extends Notifier<CourseState> {
+  /// 계획 세대 번호. [resetPlan] 이 증가시킨다.
+  ///
+  /// 요청이 진행 중일 때 초기화하면, 뒤늦게 끝난 이전 요청이 비워둔 상태에 결과를
+  /// 다시 써 넣어 화면이 결과 단계로 되돌아간다. 반영 전에 세대를 확인한다.
+  int _generation = 0;
+
   @override
   CourseState build() => const CourseState();
 
@@ -132,10 +138,12 @@ class CourseNotifier extends Notifier<CourseState> {
       return null;
     }
     final request = state.recommendRequest;
+    final generation = _generation;
     state = state.copyWith(recommendation: const AsyncLoading());
     final result = await guardAsync(
       () => courseRepository.requestAiRecommendation(request),
     );
+    if (generation != _generation) return null;
     state = state.copyWith(recommendation: result);
     if (result.value != null) setCourseId(result.value!.courseId);
     return result.value;
@@ -183,10 +191,12 @@ class CourseNotifier extends Notifier<CourseState> {
       );
       return null;
     }
+    final generation = _generation;
     state = state.copyWith(optimized: const AsyncLoading());
     final result = await guardAsync(
       () => courseRepository.optimizeCourse(request),
     );
+    if (generation != _generation) return null;
     state = state.copyWith(optimized: result);
     return result.value;
   }
@@ -241,6 +251,8 @@ class CourseNotifier extends Notifier<CourseState> {
   /// copyWith 는 `null` 을 "값 없음 유지"로 취급하므로, 실제로 async 슬롯들을
   /// 비우려면 (idle 로 되돌리려면) 새 [CourseState] 를 직접 만든다.
   void resetPlan() {
+    // 진행 중인 요청의 결과가 뒤늦게 반영되지 않도록 세대를 올린다.
+    _generation++;
     state = CourseState(
       // 입력값은 남겨 사용자가 조건을 다시 고르지 않아도 되게 한다.
       mood: state.mood,

@@ -94,6 +94,13 @@ class ReviewBoardNotifier extends Notifier<ReviewBoardState> {
 
   final String targetId;
 
+  /// 목록 revision. 정렬을 바꾸거나 목록을 다시 불러올 때 증가한다.
+  /// 이전 정렬의 응답이 새 정렬 결과를 덮어쓰거나 이어 붙지 않도록 막는다.
+  int _revision = 0;
+
+  /// 다음 페이지 요청이 진행 중인지. 같은 페이지 중복 append 를 막는다.
+  bool _loadingMore = false;
+
   @override
   ReviewBoardState build() {
     Future.microtask(load);
@@ -106,8 +113,10 @@ class ReviewBoardNotifier extends Notifier<ReviewBoardState> {
 
   Future<void> loadReviews() async {
     final query = ReviewListQuery(targetId: targetId, sort: state.sort);
+    final revision = ++_revision;
     state = state.copyWith(reviews: const AsyncLoading());
     final result = await guardAsync(() => reviewRepository.fetchReviews(query));
+    if (revision != _revision) return;
     state = state.copyWith(reviews: result);
   }
 
@@ -129,16 +138,27 @@ class ReviewBoardNotifier extends Notifier<ReviewBoardState> {
   Future<void> loadMoreReviews() async {
     final current = state.reviews?.value;
     if (current == null || !current.hasMore) return;
-    final query = ReviewListQuery(targetId: targetId, sort: state.sort);
-    final next = await guardAsync(
-      () => reviewRepository.fetchReviews(
-        query,
-        page: PageQuery(page: current.pagination.nextPage),
-      ),
-    );
-    final value = next.value;
-    if (value != null) {
-      state = state.copyWith(reviews: AsyncData(current.append(value)));
+    if (_loadingMore) return;
+    _loadingMore = true;
+    try {
+      final revision = _revision;
+      final requestedPage = current.pagination.nextPage;
+      final query = ReviewListQuery(targetId: targetId, sort: state.sort);
+      final next = await guardAsync(
+        () => reviewRepository.fetchReviews(
+          query,
+          page: PageQuery(page: requestedPage),
+        ),
+      );
+      // 정렬이 바뀌었거나 목록이 새로 로드됐으면 이어 붙이지 않는다.
+      if (revision != _revision) return;
+      final value = next.value;
+      if (value == null) return;
+      final latest = state.reviews?.value;
+      if (latest == null || latest.pagination.nextPage != requestedPage) return;
+      state = state.copyWith(reviews: AsyncData(latest.append(value)));
+    } finally {
+      _loadingMore = false;
     }
   }
 

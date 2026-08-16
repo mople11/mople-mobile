@@ -44,6 +44,9 @@ class MyPageState {
 }
 
 class MyPageNotifier extends Notifier<MyPageState> {
+  /// 목록별로 진행 중인 다음-페이지 요청. 같은 페이지를 두 번 이어 붙이지 않도록 막는다.
+  final Set<String> _loadingMore = {};
+
   @override
   MyPageState build() => const MyPageState();
 
@@ -91,28 +94,43 @@ class MyPageNotifier extends Notifier<MyPageState> {
   Future<void> loadMoreSavedCourses() async {
     final current = state.savedCourses?.value;
     if (current == null || !current.hasMore) return;
-    final next = await guardAsync(
-      () => myPageRepository.fetchSavedCourses(
-        page: PageQuery(page: current.pagination.nextPage),
-      ),
-    );
-    final value = next.value;
-    if (value != null) {
-      state = state.copyWith(savedCourses: AsyncData(current.append(value)));
+    if (!_loadingMore.add('courses')) return;
+    try {
+      final requestedPage = current.pagination.nextPage;
+      final next = await guardAsync(
+        () => myPageRepository.fetchSavedCourses(
+          page: PageQuery(page: requestedPage),
+        ),
+      );
+      final value = next.value;
+      if (value == null) return;
+      // 대기 중에 목록이 새로고침됐으면(페이지가 되돌아갔으면) 이어 붙이지 않는다.
+      final latest = state.savedCourses?.value;
+      if (latest == null || latest.pagination.nextPage != requestedPage) return;
+      state = state.copyWith(savedCourses: AsyncData(latest.append(value)));
+    } finally {
+      _loadingMore.remove('courses');
     }
   }
 
   Future<void> loadMoreLikedPlaces() async {
     final current = state.likedPlaces?.value;
     if (current == null || !current.hasMore) return;
-    final next = await guardAsync(
-      () => myPageRepository.fetchLikedPlaces(
-        page: PageQuery(page: current.pagination.nextPage),
-      ),
-    );
-    final value = next.value;
-    if (value != null) {
-      state = state.copyWith(likedPlaces: AsyncData(current.append(value)));
+    if (!_loadingMore.add('likes')) return;
+    try {
+      final requestedPage = current.pagination.nextPage;
+      final next = await guardAsync(
+        () => myPageRepository.fetchLikedPlaces(
+          page: PageQuery(page: requestedPage),
+        ),
+      );
+      final value = next.value;
+      if (value == null) return;
+      final latest = state.likedPlaces?.value;
+      if (latest == null || latest.pagination.nextPage != requestedPage) return;
+      state = state.copyWith(likedPlaces: AsyncData(latest.append(value)));
+    } finally {
+      _loadingMore.remove('likes');
     }
   }
 

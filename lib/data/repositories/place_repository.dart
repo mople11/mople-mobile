@@ -12,6 +12,9 @@ class PlaceRepository {
   ///
   /// 명세에 "지금 찜했는지"만 확인하는 엔드포인트가 따로 없어서, 토글 응답과
   /// [MyPageRepository.fetchLikedPlaces] 결과로 채운다.
+  ///
+  /// **계정에 종속된 값**이므로 로그아웃 시 [clearLikedCache] 로 비워야 한다.
+  /// 안 그러면 다른 계정으로 로그인했을 때 이전 사용자의 찜 상태가 남는다.
   final Set<String> _likedPlaceIds = {};
 
   Future<Paged<SearchResultItem>> search(
@@ -75,11 +78,16 @@ class PlaceRepository {
   bool isLiked(String placeId) => _likedPlaceIds.contains(placeId);
 
   /// `GET /users/me/likes` 결과로 찜 상태 캐시를 맞춘다.
-  void syncLikedPlaceIds(Iterable<String> placeIds) {
-    _likedPlaceIds
-      ..clear()
-      ..addAll(placeIds);
+  ///
+  /// [replace] 가 true 면(첫 페이지) 캐시를 새로 채우고, false 면(다음 페이지)
+  /// 기존 값에 더한다. 매 페이지마다 교체하면 앞 페이지의 찜이 사라진다.
+  void syncLikedPlaceIds(Iterable<String> placeIds, {required bool replace}) {
+    if (replace) _likedPlaceIds.clear();
+    _likedPlaceIds.addAll(placeIds);
   }
+
+  /// 로그아웃 시 호출. 계정이 바뀌어도 이전 찜 상태가 남지 않게 한다.
+  void clearLikedCache() => _likedPlaceIds.clear();
 }
 
 PlaceRepository get placeRepository => PlaceRepository.instance;

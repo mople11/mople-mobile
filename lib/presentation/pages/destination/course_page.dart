@@ -34,6 +34,17 @@ class _CoursePageState extends ConsumerState<CoursePage> {
     }
   }
 
+  @override
+  void dispose() {
+    // courseProvider 는 전역이라 화면을 떠나도 courseId 가 남는다. 그대로 두면
+    // 다른 화면(RoutePage 등)이 이 값을 자기 코스로 착각해 엉뚱한 코스를 저장한다.
+    if (widget.courseId != null) {
+      final notifier = ref.read(courseProvider.notifier);
+      Future.microtask(() => notifier.setCourseId(null));
+    }
+    super.dispose();
+  }
+
   Future<void> _save(String courseId) async {
     await ref.read(courseProvider.notifier).save(courseId);
     if (!mounted) return;

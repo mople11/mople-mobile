@@ -142,6 +142,10 @@ class _ResultsPageState extends ConsumerState<ResultsPage> {
                         transportLabel: widget.transportLabel,
                         hours: widget.hours,
                         placeIds: paged.items.map((e) => e.id).toList(),
+                        // 최적화 응답은 ID 만 돌려주므로 이름을 함께 넘긴다.
+                        placeNames: {
+                          for (final e in paged.items) e.id: e.name,
+                        },
                       ),
                     ),
                   ),

@@ -15,10 +15,11 @@ import 'package:mople_mobile/presentation/pages/auth/login_page.dart';
 /// 처리도 함께 죽으므로, 앱 루트에 키를 두고 여기서 전환한다.
 final navigatorKey = GlobalKey<NavigatorState>();
 
-void main() {
+void main() async {
   // 카카오 SDK 는 플랫폼 채널을 쓰므로 바인딩을 먼저 초기화한다.
   WidgetsFlutterBinding.ensureInitialized();
-  KakaoAuth.init();
+  // 초기화가 끝나기 전에 로그인 요청이 나가지 않도록 반드시 기다린다.
+  await KakaoAuth.init();
   runApp(const ProviderScope(child: MyApp()));
 }
 

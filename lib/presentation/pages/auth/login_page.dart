@@ -21,8 +21,8 @@ class LoginPage extends ConsumerStatefulWidget {
 }
 
 class _LoginPageState extends ConsumerState<LoginPage> {
-  final _idController = TextEditingController(text: 'traveler01');
-  final _pwController = TextEditingController(text: 'password');
+  final _idController = TextEditingController();
+  final _pwController = TextEditingController();
   bool _showPassword = false;
   bool _submitting = false;
 

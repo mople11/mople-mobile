@@ -20,12 +20,17 @@ class RoutePage extends ConsumerStatefulWidget {
     this.transportLabel,
     this.hours,
     this.placeIds = const <String>[],
+    this.placeNames = const <String, String>{},
   });
 
   final String? companionLabel;
   final String? transportLabel;
   final double? hours;
   final List<String> placeIds;
+
+  /// placeId → 장소명. 서버 최적화 결과는 ID 만 돌려주므로, 화면에 ID 가 그대로
+  /// 노출되지 않도록 호출부(검색 결과)에서 이름을 함께 넘긴다.
+  final Map<String, String> placeNames;
 
   @override
   ConsumerState<RoutePage> createState() => _RoutePageState();
@@ -135,7 +140,8 @@ class _RoutePageState extends ConsumerState<RoutePage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '장소 ${result.orderedPlaces[i]}',
+                          widget.placeNames[result.orderedPlaces[i]] ??
+                              '장소 ${result.orderedPlaces[i]}',
                           style: AppTextStyle.body.copyWith(
                             fontWeight: AppFont.semibold,
                           ),
@@ -154,20 +160,24 @@ class _RoutePageState extends ConsumerState<RoutePage> {
               ),
               const SizedBox(height: AppSpacing.space4),
             ],
-            AppButton(
-              label: '코스 저장',
-              width: double.infinity,
-              size: AppButtonSize.lg,
-              onPressed: state.courseId == null ? null : _save,
-            ),
+            // 최적화 응답에는 courseId 가 없다(orderedPlaces/segmentTimes/route 뿐).
+            // 저장은 AI 추천 등으로 코스가 확정된 경우에만 의미가 있으므로,
+            // 그때 채워지는 courseId 를 명시적으로 캡처해 넘긴다.
+            if (state.courseId != null)
+              AppButton(
+                label: '코스 저장',
+                width: double.infinity,
+                size: AppButtonSize.lg,
+                onPressed: () => _save(state.courseId!),
+              ),
           ],
         ),
       ),
     );
   }
 
-  Future<void> _save() async {
-    await ref.read(courseProvider.notifier).save();
+  Future<void> _save(String courseId) async {
+    await ref.read(courseProvider.notifier).save(courseId);
     if (!mounted) return;
     final action = ref.read(courseProvider).saveAction;
     AppToast.show(

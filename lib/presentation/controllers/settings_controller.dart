@@ -32,6 +32,10 @@ class SettingsState {
 }
 
 class SettingsNotifier extends Notifier<SettingsState> {
+  /// 진행 중인 PATCH 체인. 스위치를 연달아 누를 때 요청이 겹치면 이전 요청의
+  /// 실패 롤백이 이후 변경을 되돌릴 수 있어, 순서대로 하나씩 보낸다.
+  Future<void> _pending = Future<void>.value();
+
   @override
   SettingsState build() => const SettingsState();
 
@@ -63,7 +67,14 @@ class SettingsNotifier extends Notifier<SettingsState> {
       _patch(SettingsUpdateRequest(language: value));
 
   /// 낙관적 반영 후 실패 시 롤백.
-  Future<bool> _patch(SettingsUpdateRequest request) async {
+  Future<bool> _patch(SettingsUpdateRequest request) {
+    // 앞선 요청이 끝난 뒤에 실행되도록 큐에 잇는다.
+    final result = _pending.then((_) => _patchNow(request));
+    _pending = result.then((_) {}, onError: (_) {});
+    return result;
+  }
+
+  Future<bool> _patchNow(SettingsUpdateRequest request) async {
     if (request.isEmpty) return false;
     final previous = state.current;
     state = state.copyWith(

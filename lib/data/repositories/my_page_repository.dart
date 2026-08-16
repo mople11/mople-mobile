@@ -43,7 +43,11 @@ class MyPageRepository {
       listKey: 'places',
       parse: LikedPlace.fromJson,
     );
-    placeRepository.syncLikedPlaceIds(result.items.map((e) => e.placeId));
+    // 첫 페이지만 캐시를 교체하고, 이후 페이지는 더한다.
+    placeRepository.syncLikedPlaceIds(
+      result.items.map((e) => e.placeId),
+      replace: result.pagination.page <= 1,
+    );
     return result;
   }
 

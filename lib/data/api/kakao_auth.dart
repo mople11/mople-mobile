@@ -12,12 +12,15 @@ import 'package:mople_mobile/data/models/models.dart';
 abstract final class KakaoAuth {
   /// [AppConfig.kakaoNativeAppKey] 가 있을 때만 SDK 를 초기화한다.
   /// 키가 없으면 조용히 넘어가고, 로그인 시도 시 안내 에러를 돌려준다.
-  static void init() {
+  ///
+  /// `KakaoSdk.init` 은 `Future` 를 돌려주므로 **반드시 await 해야 한다.**
+  /// 기다리지 않으면 초기화가 끝나기 전에 로그인 요청이 나갈 수 있다.
+  static Future<void> init() async {
     if (!AppConfig.hasKakaoKey) {
       debugPrint('[Kakao] 네이티브 앱 키가 없어 카카오 로그인을 비활성화합니다.');
       return;
     }
-    KakaoSdk.init(nativeAppKey: AppConfig.kakaoNativeAppKey);
+    await KakaoSdk.init(nativeAppKey: AppConfig.kakaoNativeAppKey);
   }
 
   /// 카카오톡 앱이 있으면 앱으로, 없으면 웹 계정 로그인으로 진행한다.
