@@ -205,8 +205,10 @@ class CourseNotifier extends Notifier<CourseState> {
   Future<CourseStartResult?> start([String? id]) async {
     final target = id ?? state.courseId;
     if (target == null) return null;
+    final generation = _generation;
     state = state.copyWith(started: const AsyncLoading());
     final result = await guardAsync(() => courseRepository.startCourse(target));
+    if (generation != _generation) return null;
     state = state.copyWith(started: result);
     return result.value;
   }
@@ -214,9 +216,11 @@ class CourseNotifier extends Notifier<CourseState> {
   Future<void> save([String? id]) async {
     final target = id ?? state.courseId;
     if (target == null) return;
+    final generation = _generation;
     final previous = state.saved;
     state = state.copyWith(saved: true, saveAction: const AsyncLoading());
     final result = await guardAsync(() => courseRepository.saveCourse(target));
+    if (generation != _generation) return;
     state = state.copyWith(
       saveAction: result,
       saved: result.hasError ? previous : true,
@@ -226,8 +230,10 @@ class CourseNotifier extends Notifier<CourseState> {
   Future<ShareResult?> share([String? id]) async {
     final target = id ?? state.courseId;
     if (target == null) return null;
+    final generation = _generation;
     state = state.copyWith(shared: const AsyncLoading());
     final result = await guardAsync(() => courseRepository.shareCourse(target));
+    if (generation != _generation) return null;
     state = state.copyWith(shared: result);
     return result.value;
   }
@@ -240,10 +246,12 @@ class CourseNotifier extends Notifier<CourseState> {
     final target = id ?? state.courseId;
     if (target == null) return null;
     final request = CourseCompleteRequest(checkInLocations: checkInLocations);
+    final generation = _generation;
     state = state.copyWith(completed: const AsyncLoading());
     final result = await guardAsync(
       () => courseRepository.completeCourse(target, request),
     );
+    if (generation != _generation) return null;
     state = state.copyWith(completed: result);
     return result.value;
   }
