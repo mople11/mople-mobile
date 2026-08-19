@@ -59,7 +59,7 @@ abstract final class AuthTokenStore {
   static bool get hasSession => _session != null;
 
   /// 로그인·회원가입 성공 시 호출. 메모리와 저장소에 함께 기록한다.
-  static Future<void> save(AuthSession session) async {
+  static Future<void> _saveUnlocked(AuthSession session) async {
     _session = session;
     _deleteFailed = false;
     _revision++;
@@ -84,7 +84,7 @@ abstract final class AuthTokenStore {
 
   /// 앱 시작 시 1회 호출해 저장된 세션을 메모리로 올린다.
   /// 복원된 세션이 있으면 반환한다.
-  static Future<AuthSession?> restore() async {
+  static Future<AuthSession?> _restoreUnlocked() async {
     if (_deleteFailed) {
       debugPrint('[Auth] 이전 삭제 실패로 세션 복원을 건너뜁니다.');
       return null;
@@ -120,6 +120,10 @@ abstract final class AuthTokenStore {
         return null;
       }
       _session = session;
+      // 복원 전에 나간 요청은 옛 revision 을 들고 있다. 여기서 올리지 않으면
+      // 그 요청이 401 로 돌아왔을 때 같은 세션으로 판정돼, 방금 복원한 세션이
+      // 지워진다.
+      _revision++;
       return session;
     } catch (e) {
       debugPrint('[Auth] 세션 복원 실패: $e');
@@ -133,7 +137,7 @@ abstract final class AuthTokenStore {
   /// 삭제에 실패하면 **예외를 그대로 올린다.** 조용히 넘어가면 호출부가 성공으로
   /// 오해한다. 다만 예외를 무시하고 진행하더라도 위에 적은 다중 방어가 남아
   /// [restore] 는 그 세션을 되살리지 않는다.
-  static Future<void> clear() async {
+  static Future<void> _clearUnlocked() async {
     _session = null;
     _revision++;
     // 삭제보다 먼저 표시를 남긴다. 삭제가 실패한 채 앱이 종료돼도 다음 실행에서
@@ -166,10 +170,35 @@ abstract final class AuthTokenStore {
     await _removeLogoutMarker();
   }
 
+  // ── 직렬화 ────────────────────────────────────────────────
+  //
+  // save 는 메모리 세션을 먼저 바꾸고 저장소 쓰기를 await 한다. 그 사이에 401
+  // 이나 로그아웃이 clear 를 실행하면, 뒤늦게 재개된 쓰기가 **로그아웃한
+  // 세션을 다시 저장**하거나 새 세션의 값을 지운다. 세 연산을 한 줄로 세운다.
+
+  static Future<void> _lock = Future<void>.value();
+
+  static Future<T> _synchronized<T>(Future<T> Function() action) {
+    final result = _lock.then((_) => action());
+    _lock = result.then((_) {}, onError: (_) {});
+    return result;
+  }
+
+  /// 로그인·회원가입 성공 시 호출.
+  static Future<void> save(AuthSession session) =>
+      _synchronized(() => _saveUnlocked(session));
+
+  /// 앱 시작 시 1회 호출해 저장된 세션을 메모리로 올린다.
+  static Future<AuthSession?> restore() =>
+      _synchronized(_restoreUnlocked);
+
+  /// 로그아웃·토큰 만료 시 메모리와 저장소를 모두 비운다.
+  static Future<void> clear() => _synchronized(_clearUnlocked);
+
   /// 복원 경로 전용 삭제. 어차피 복원하지 않는 자리라 예외를 올리지 않는다.
   static Future<void> _clearQuietly() async {
     try {
-      await clear();
+      await _clearUnlocked();
     } catch (_) {
       // 로그는 clear 에서 남긴다.
     }

@@ -36,12 +36,22 @@ class SettingsNotifier extends Notifier<SettingsState> {
   /// 실패 롤백이 이후 변경을 되돌릴 수 있어, 순서대로 하나씩 보낸다.
   Future<void> _pending = Future<void>.value();
 
+  /// 설정 revision. PATCH 를 시작할 때마다 오른다.
+  ///
+  /// `_pending` 은 PATCH 끼리만 줄 세운다. 조회는 따로 나가므로, GET 을 띄운 뒤
+  /// 스위치를 만지면 **서버가 바뀌기 전에 읽은 값**이 뒤늦게 도착해 방금 켠
+  /// 스위치를 도로 꺼 버린다. 그 GET 을 버리는 데 쓴다.
+  int _revision = 0;
+
   @override
   SettingsState build() => const SettingsState();
 
   Future<void> load() async {
+    final revision = ++_revision;
     state = state.copyWith(settings: const AsyncLoading());
     final result = await guardAsync(settingsRepository.fetchSettings);
+    // 대기 중에 PATCH 가 시작됐으면 이 응답은 이미 낡았다.
+    if (revision != _revision) return;
     state = state.copyWith(settings: result);
   }
 
@@ -80,6 +90,8 @@ class SettingsNotifier extends Notifier<SettingsState> {
 
   Future<bool> _patchNow(SettingsUpdateRequest request) async {
     if (request.isEmpty) return false;
+    // 진행 중인 조회 응답이 이 변경을 덮어쓰지 못하게 한다.
+    _revision++;
     final previous = state.current;
     state = state.copyWith(
       settings: AsyncData(

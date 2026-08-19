@@ -73,9 +73,12 @@ class _CoursePageState extends ConsumerState<CoursePage> {
   void dispose() {
     // courseProvider 는 전역이라 화면을 떠나도 courseId 가 남는다. 그대로 두면
     // 다른 화면(RoutePage 등)이 이 값을 자기 코스로 착각해 엉뚱한 코스를 저장한다.
-    if (widget.courseId != null) {
+    final id = widget.courseId;
+    if (id != null) {
       final notifier = ref.read(courseProvider.notifier);
-      Future.microtask(() => notifier.setCourseId(null));
+      // 이 화면이 넣은 값일 때만 지운다. 다른 CoursePage 가 이미 새 코스를
+      // 지정했다면 그 값을 건드리면 안 된다.
+      Future.microtask(() => notifier.clearCourseIdIfMatches(id));
     }
     super.dispose();
   }

@@ -207,6 +207,8 @@ class _SignupPageState extends ConsumerState<SignupPage> {
       );
       return;
     }
+    // 세대가 어긋나 결과가 반영되지 않았으면 완료 화면으로 넘기지 않는다.
+    if (signup?.value == null) return;
     setState(() => _done = true);
   }
 

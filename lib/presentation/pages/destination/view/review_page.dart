@@ -35,6 +35,15 @@ class _ReviewPageState extends ConsumerState<ReviewPage> {
     super.dispose();
   }
 
+  bool _loadingMore = false;
+
+  Future<void> _loadMoreReviews() async {
+    setState(() => _loadingMore = true);
+    await _notifier.loadMoreReviews();
+    if (!mounted) return;
+    setState(() => _loadingMore = false);
+  }
+
   ReviewBoardNotifier get _notifier =>
       ref.read(reviewBoardProvider(widget.targetId).notifier);
 
@@ -211,6 +220,15 @@ class _ReviewPageState extends ConsumerState<ReviewPage> {
                 ),
                 const SizedBox(height: AppSpacing.space3),
               ],
+              // 서버가 여러 페이지를 주면 첫 페이지 뒤의 후기는 보이지 않는다.
+              // 중복 요청은 loadMoreReviews 안의 진행 중 플래그가 막는다.
+              if (paged.hasMore)
+                AppButton(
+                  label: _loadingMore ? '불러오는 중...' : '후기 더 보기',
+                  variant: AppButtonVariant.outline,
+                  width: double.infinity,
+                  onPressed: _loadingMore ? null : _loadMoreReviews,
+                ),
             ],
           ),
         ),

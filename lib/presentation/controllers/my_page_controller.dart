@@ -164,6 +164,8 @@ class MyPageNotifier extends Notifier<MyPageState> {
     );
     if (request.isEmpty) return false;
 
+    // 진행 중인 요약 조회가 방금 저장한 값을 옛 프로필로 되돌리지 못하게 한다.
+    _bump('summary');
     state = state.copyWith(profileUpdate: const AsyncLoading());
     final result = await guardAsync(
       () => myPageRepository.updateProfile(request),
@@ -173,7 +175,11 @@ class MyPageNotifier extends Notifier<MyPageState> {
     final ok = !result.hasError;
     if (ok) {
       final current = state.summary?.value;
-      if (current != null) {
+      if (current == null) {
+        // 저장 시점에 요약이 아직 없었으면(로딩 중이었으면) 병합할 대상이 없다.
+        // 화면이 빈 채로 남지 않도록 최신 프로필을 다시 불러온다.
+        await loadSummary();
+      } else {
         state = state.copyWith(
           summary: AsyncData(
             current.copyWith(

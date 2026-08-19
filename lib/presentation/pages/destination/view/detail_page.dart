@@ -151,6 +151,13 @@ class _DetailPageState extends ConsumerState<DetailPage> {
                         ),
                         child: _CongestionSection(
                           state: state,
+                          onRetry: () => ref
+                              .read(
+                                placeDetailProvider(
+                                  widget.destinationId,
+                                ).notifier,
+                              )
+                              .loadCongestion(),
                           onTap: () => context.push(
                             CongestionPage(destinationId: widget.destinationId),
                           ),
@@ -421,7 +428,13 @@ class _Header extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────
 
 class _CongestionSection extends StatelessWidget {
-  const _CongestionSection({required this.state, required this.onTap});
+  const _CongestionSection({
+    required this.state,
+    required this.onTap,
+    required this.onRetry,
+  });
+
+  final VoidCallback onRetry;
 
   final PlaceDetailState state;
   final VoidCallback onTap;
@@ -447,6 +460,7 @@ class _CongestionSection extends StatelessWidget {
           AsyncView<PlaceCongestion>(
             value: state.congestion,
             loadingHeight: 90,
+            onRetry: onRetry,
             builder: (congestion) => Material(
               color: AppColors.surfaceCard,
               borderRadius: AppRadius.radiusLg,

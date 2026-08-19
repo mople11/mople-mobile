@@ -58,6 +58,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         );
         return;
       }
+      // 세대가 어긋나면(로그아웃·세션 교체) 결과가 반영되지 않아 오류도 아니고
+      // 값도 없다. 이때 홈으로 보내면 로그아웃한 채로 들어간다.
+      if (session?.value == null) return;
       _goHome();
     } on ApiException catch (e) {
       // 카카오 단계에서 실패(취소·미설정 등) — 서버까지 가지 않은 경우.
@@ -101,6 +104,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       );
       return;
     }
+    if (session?.value == null) return;
     _goHome();
   }
 

@@ -25,6 +25,9 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
   late final TextEditingController _nicknameController;
   bool _saving = false;
 
+  /// 사용자가 직접 고쳤는지. 고쳤으면 서버 값으로 덮어쓰지 않는다.
+  bool _edited = false;
+
   @override
   void initState() {
     super.initState();
@@ -32,6 +35,9 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
     _nicknameController = TextEditingController(
       text: ref.read(myPageProvider).profile.nickname,
     );
+    // 요약 조회보다 이 화면을 먼저 열면 빈 문자열로 굳는다. 응답이 온 뒤에도
+    // 사용자가 아직 손대지 않았다면 서버 닉네임으로 채운다.
+    _nicknameController.addListener(_markEdited);
   }
 
   @override
@@ -39,6 +45,22 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
     _nicknameController.dispose();
     super.dispose();
   }
+
+  /// 요약 응답이 늦게 도착했을 때 입력칸을 채운다.
+  /// 사용자가 이미 손댔으면 건드리지 않는다.
+  void _syncNicknameFromServer(String nickname) {
+    if (_edited || nickname.isEmpty) return;
+    if (_nicknameController.text == nickname) return;
+    // 리스너가 _edited 를 켜지 않도록 텍스트만 바꾼다.
+    _nicknameController.removeListener(_markEdited);
+    _nicknameController.text = nickname;
+    _nicknameController.selection = TextSelection.collapsed(
+      offset: nickname.length,
+    );
+    _nicknameController.addListener(_markEdited);
+  }
+
+  void _markEdited() => _edited = true;
 
   Future<void> _save() async {
     final nickname = _nicknameController.text.trim();
@@ -83,6 +105,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
   @override
   Widget build(BuildContext context) {
     final profile = ref.watch(myPageProvider).profile;
+    _syncNicknameFromServer(profile.nickname);
 
     return AppDetailScaffold(
       title: '프로필 편집',

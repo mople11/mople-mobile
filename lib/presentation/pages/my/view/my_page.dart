@@ -42,6 +42,9 @@ class _MyPageState extends ConsumerState<MyPage> {
       context,
       onConfirm: () async {
         await ref.read(authProvider.notifier).logout();
+        // ProviderScope 는 그대로 살아 있다. 탭을 되돌리지 않으면 다음 로그인
+        // 뒤에도 MainTabShell 이 MY 탭을 펼친 채로 시작한다.
+        ref.read(mainTabProvider.notifier).switchTab('home');
         if (!mounted) return;
         context.pushAndRemoveAll(const LoginPage());
       },

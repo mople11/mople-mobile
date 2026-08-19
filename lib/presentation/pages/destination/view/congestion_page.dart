@@ -115,11 +115,20 @@ class CongestionPage extends ConsumerWidget {
                     _HourlyGraph(hours: congestion.hourlyGraph),
                     const SizedBox(height: AppSpacing.space5),
                   ],
-                  AppButton(
-                    label: '지도에서 보기',
-                    variant: AppButtonVariant.outline,
-                    width: double.infinity,
-                    onPressed: () => context.push(const MapPage()),
+                  // 좌표가 없으면 MapPage 가 교통 경로 조회를 건너뛰어 이 장소와
+                  // 무관한 정적 지도만 뜬다. 그럴 땐 버튼을 열지 않는다.
+                  Builder(
+                    builder: (context) {
+                      final point = state.detail?.value?.map;
+                      return AppButton(
+                        label: '지도에서 보기',
+                        variant: AppButtonVariant.outline,
+                        width: double.infinity,
+                        onPressed: point == null
+                            ? null
+                            : () => context.push(MapPage(destination: point)),
+                      );
+                    },
                   ),
                 ],
               ),

@@ -105,6 +105,13 @@ class CourseNotifier extends Notifier<CourseState> {
   /// 다시 써 넣어 화면이 결과 단계로 되돌아간다. 반영 전에 세대를 확인한다.
   int _generation = 0;
 
+  /// 최적화 입력(장소 목록·순서·이동수단) revision.
+  ///
+  /// 세대([_generation])는 계획 초기화·코스 전환에만 오른다. 같은 계획 안에서
+  /// 장소를 바꾸고 다시 최적화하면 세대는 그대로라, 이전 동선 응답이 늦게
+  /// 도착해 새 화면에 옛 동선을 그린다.
+  int _optimizeRevision = 0;
+
   @override
   CourseState build() => const CourseState();
 
@@ -120,6 +127,15 @@ class CourseNotifier extends Notifier<CourseState> {
       state = state.copyWith(timeAvailable: value);
 
   void setFreeText(String? value) => state = state.copyWith(freeText: value);
+
+  /// [expectedId] 가 아직 현재 값일 때만 코스 선택을 비운다.
+  ///
+  /// [courseProvider] 는 전역이라, 먼저 열려 있던 CoursePage 의 정리가 새
+  /// CoursePage 의 [setCourseId] 뒤에 실행되면 새 코스 ID 를 지워 버린다.
+  void clearCourseIdIfMatches(String expectedId) {
+    if (state.courseId != expectedId) return;
+    setCourseId(null);
+  }
 
   void setCourseId(String? value) {
     // 다른 코스로 바뀌면 이전 코스의 저장·시작·공유 응답이 새 코스 상태를
@@ -168,17 +184,21 @@ class CourseNotifier extends Notifier<CourseState> {
   /// 새 동선을 계산할 때 [togglePlace] 로 추가만 하면 이전 코스의 장소가 그대로
   /// 섞이므로, 화면에서 넘어온 목록으로 교체해야 한다. 중복 id 도 여기서 제거한다.
   void setSelectedPlaces(List<String> placeIds) {
+    _optimizeRevision++;
     state = state.copyWith(selectedPlaceIds: placeIds.toSet().toList());
   }
 
-  void setRouteTransport(RouteTransport value) =>
-      state = state.copyWith(routeTransport: value);
+  void setRouteTransport(RouteTransport value) {
+    _optimizeRevision++;
+    state = state.copyWith(routeTransport: value);
+  }
 
   void reorderPlaces(int oldIndex, int newIndex) {
     if (oldIndex < newIndex) newIndex -= 1;
     final ids = [...state.selectedPlaceIds];
     final item = ids.removeAt(oldIndex);
     ids.insert(newIndex, item);
+    _optimizeRevision++;
     state = state.copyWith(selectedPlaceIds: ids);
   }
 
@@ -198,11 +218,12 @@ class CourseNotifier extends Notifier<CourseState> {
       return null;
     }
     final generation = _generation;
+    final revision = _optimizeRevision;
     state = state.copyWith(optimized: const AsyncLoading());
     final result = await guardAsync(
       () => courseRepository.optimizeCourse(request),
     );
-    if (generation != _generation) return null;
+    if (generation != _generation || revision != _optimizeRevision) return null;
     state = state.copyWith(optimized: result);
     return result.value;
   }
