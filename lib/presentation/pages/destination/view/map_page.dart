@@ -10,7 +10,7 @@ import 'package:mople_mobile/core/mock/eodiganam_data.dart';
 import 'package:mople_mobile/core/widgets/widgets.dart';
 import 'package:mople_mobile/data/models/models.dart';
 import 'package:mople_mobile/presentation/controllers/traffic_controller.dart';
-import 'package:mople_mobile/presentation/pages/destination/course_page.dart';
+import 'package:mople_mobile/presentation/pages/destination/view/course_page.dart';
 
 /// 동선 지도.
 ///

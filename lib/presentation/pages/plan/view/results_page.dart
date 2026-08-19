@@ -8,7 +8,7 @@ import 'package:mople_mobile/core/constants/spacing.dart';
 import 'package:mople_mobile/core/widgets/widgets.dart';
 import 'package:mople_mobile/data/models/models.dart';
 import 'package:mople_mobile/presentation/controllers/place_search_controller.dart';
-import 'package:mople_mobile/presentation/pages/plan/route_page.dart';
+import 'package:mople_mobile/presentation/pages/plan/view/route_page.dart';
 
 /// 추천 결과 — 검색 API(`GET /search`)로 조건에 맞는 장소를 보여준다.
 ///

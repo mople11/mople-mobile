@@ -9,7 +9,7 @@ import 'package:mople_mobile/core/widgets/widgets.dart';
 import 'package:mople_mobile/presentation/controllers/base/async_result.dart';
 import 'package:mople_mobile/presentation/controllers/course_controller.dart';
 import 'package:mople_mobile/presentation/controllers/favorites_controller.dart';
-import 'package:mople_mobile/presentation/pages/destination/map_page.dart';
+import 'package:mople_mobile/presentation/pages/destination/view/map_page.dart';
 
 /// 코스 상세.
 ///

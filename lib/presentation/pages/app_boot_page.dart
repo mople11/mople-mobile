@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mople_mobile/core/constants/color.dart';
 import 'package:mople_mobile/presentation/controllers/auth_controller.dart';
 import 'package:mople_mobile/presentation/pages/app_start_page.dart';
-import 'package:mople_mobile/presentation/pages/home/main_tab_shell.dart';
+import 'package:mople_mobile/presentation/pages/home/view/main_tab_shell.dart';
 
 /// 앱의 첫 화면. 저장된 로그인 세션을 복원한 뒤 갈 곳을 정한다.
 ///

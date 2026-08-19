@@ -11,10 +11,10 @@ import 'package:mople_mobile/data/models/models.dart';
 import 'package:mople_mobile/presentation/controllers/auth_controller.dart';
 import 'package:mople_mobile/presentation/controllers/home_controller.dart';
 import 'package:mople_mobile/presentation/controllers/main_tab_controller.dart';
-import 'package:mople_mobile/presentation/pages/destination/ai_trip_page.dart';
-import 'package:mople_mobile/presentation/pages/destination/course_page.dart';
-import 'package:mople_mobile/presentation/pages/home/home_discover_page.dart';
-import 'package:mople_mobile/presentation/pages/home/weather_page.dart';
+import 'package:mople_mobile/presentation/pages/destination/view/ai_trip_page.dart';
+import 'package:mople_mobile/presentation/pages/destination/view/course_page.dart';
+import 'package:mople_mobile/presentation/pages/home/view/home_discover_page.dart';
+import 'package:mople_mobile/presentation/pages/home/view/weather_page.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});

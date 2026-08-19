@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mople_mobile/presentation/pages/onboarding/onboarding_model.dart';
+import 'package:mople_mobile/presentation/pages/onboarding/view/onboarding_model.dart';
 
 const List<OnboardingModel> onboardingInfo = [
   OnboardingModel(

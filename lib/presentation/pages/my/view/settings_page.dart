@@ -10,8 +10,8 @@ import 'package:mople_mobile/data/models/models.dart';
 import 'package:mople_mobile/presentation/controllers/auth_controller.dart';
 import 'package:mople_mobile/presentation/controllers/main_tab_controller.dart';
 import 'package:mople_mobile/presentation/controllers/settings_controller.dart';
-import 'package:mople_mobile/presentation/pages/auth/login_page.dart';
-import 'package:mople_mobile/presentation/pages/my/profile_edit_page.dart';
+import 'package:mople_mobile/presentation/pages/auth/view/login_page.dart';
+import 'package:mople_mobile/presentation/pages/my/view/profile_edit_page.dart';
 
 /// 앱 설정 — `GET /settings`, `PATCH /settings`.
 ///

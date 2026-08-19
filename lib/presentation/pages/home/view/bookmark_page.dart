@@ -7,8 +7,8 @@ import 'package:mople_mobile/core/constants/spacing.dart';
 import 'package:mople_mobile/core/widgets/widgets.dart';
 import 'package:mople_mobile/data/models/models.dart';
 import 'package:mople_mobile/presentation/controllers/my_page_controller.dart';
-import 'package:mople_mobile/presentation/pages/destination/course_page.dart';
-import 'package:mople_mobile/presentation/pages/destination/detail_page.dart';
+import 'package:mople_mobile/presentation/pages/destination/view/course_page.dart';
+import 'package:mople_mobile/presentation/pages/destination/view/detail_page.dart';
 
 /// 내 여행 — 찜한 여행지(`GET /users/me/likes`)와 저장한 코스(`GET /users/me/courses`).
 class BookmarkPage extends ConsumerStatefulWidget {

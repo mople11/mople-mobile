@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mople_mobile/core/widgets/widgets.dart';
 import 'package:mople_mobile/presentation/controllers/main_tab_controller.dart';
-import 'package:mople_mobile/presentation/pages/home/bookmark_page.dart';
-import 'package:mople_mobile/presentation/pages/home/home_page.dart';
-import 'package:mople_mobile/presentation/pages/home/search_page.dart';
-import 'package:mople_mobile/presentation/pages/my/my_page.dart';
+import 'package:mople_mobile/presentation/pages/home/view/bookmark_page.dart';
+import 'package:mople_mobile/presentation/pages/home/view/home_page.dart';
+import 'package:mople_mobile/presentation/pages/home/view/search_page.dart';
+import 'package:mople_mobile/presentation/pages/my/view/my_page.dart';
 
 /// 홈 · 탐색 · 찜 · MY 4개 탭을 하나의 화면 스택에서 전환하는 셸.
 class MainTabShell extends ConsumerWidget {

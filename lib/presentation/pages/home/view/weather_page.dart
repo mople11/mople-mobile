@@ -3,12 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mople_mobile/core/navigation/app_navigation.dart';
 import 'package:mople_mobile/core/constants/color.dart';
 import 'package:mople_mobile/core/constants/font.dart';
-import 'package:mople_mobile/core/constants/radius.dart';
 import 'package:mople_mobile/core/constants/spacing.dart';
 import 'package:mople_mobile/core/widgets/widgets.dart';
 import 'package:mople_mobile/data/models/models.dart';
 import 'package:mople_mobile/presentation/controllers/home_controller.dart';
-import 'package:mople_mobile/presentation/pages/destination/course_page.dart';
+import 'package:mople_mobile/presentation/pages/destination/view/course_page.dart';
 
 class WeatherPage extends ConsumerStatefulWidget {
   const WeatherPage({super.key});

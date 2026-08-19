@@ -9,7 +9,7 @@ import 'package:mople_mobile/core/constants/spacing.dart';
 import 'package:mople_mobile/core/widgets/widgets.dart';
 import 'package:mople_mobile/data/models/models.dart';
 import 'package:mople_mobile/presentation/controllers/place_search_controller.dart';
-import 'package:mople_mobile/presentation/pages/destination/detail_page.dart';
+import 'package:mople_mobile/presentation/pages/destination/view/detail_page.dart';
 
 /// 통합 검색 — `GET /search`.
 ///

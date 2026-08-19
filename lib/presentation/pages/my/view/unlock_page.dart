@@ -9,7 +9,7 @@ import 'package:mople_mobile/core/widgets/widgets.dart';
 import 'package:mople_mobile/data/models/models.dart';
 import 'package:mople_mobile/presentation/controllers/home_controller.dart';
 import 'package:mople_mobile/presentation/controllers/unlock_controller.dart';
-import 'package:mople_mobile/presentation/pages/destination/course_page.dart';
+import 'package:mople_mobile/presentation/pages/destination/view/course_page.dart';
 
 /// 숨겨진 여행지 — `GET /courses/unlocked`.
 class UnlockPage extends ConsumerStatefulWidget {

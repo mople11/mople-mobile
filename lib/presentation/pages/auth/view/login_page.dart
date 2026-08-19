@@ -9,9 +9,9 @@ import 'package:mople_mobile/data/api/kakao_auth.dart';
 import 'package:mople_mobile/data/models/models.dart';
 import 'package:mople_mobile/presentation/controllers/auth_controller.dart';
 import 'package:mople_mobile/presentation/controllers/base/async_result.dart';
-import 'package:mople_mobile/presentation/pages/auth/forgot_password_page.dart';
-import 'package:mople_mobile/presentation/pages/auth/signup_page.dart';
-import 'package:mople_mobile/presentation/pages/home/main_tab_shell.dart';
+import 'package:mople_mobile/presentation/pages/auth/view/forgot_password_page.dart';
+import 'package:mople_mobile/presentation/pages/auth/view/signup_page.dart';
+import 'package:mople_mobile/presentation/pages/home/view/main_tab_shell.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});

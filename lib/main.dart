@@ -6,7 +6,7 @@ import 'package:mople_mobile/data/api/api_client.dart';
 import 'package:mople_mobile/data/api/kakao_auth.dart';
 import 'package:mople_mobile/presentation/controllers/auth_controller.dart';
 import 'package:mople_mobile/presentation/pages/app_boot_page.dart';
-import 'package:mople_mobile/presentation/pages/auth/login_page.dart';
+import 'package:mople_mobile/presentation/pages/auth/view/login_page.dart';
 
 /// 화면 스택과 무관하게 살아 있는 내비게이터 참조.
 ///

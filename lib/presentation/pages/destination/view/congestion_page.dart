@@ -8,7 +8,7 @@ import 'package:mople_mobile/core/constants/spacing.dart';
 import 'package:mople_mobile/core/widgets/widgets.dart';
 import 'package:mople_mobile/data/models/models.dart';
 import 'package:mople_mobile/presentation/controllers/place_detail_controller.dart';
-import 'package:mople_mobile/presentation/pages/destination/map_page.dart';
+import 'package:mople_mobile/presentation/pages/destination/view/map_page.dart';
 
 /// 관광지 혼잡도 — `GET /places/{placeId}/congestion`.
 class CongestionPage extends ConsumerWidget {

@@ -11,12 +11,12 @@ import 'package:mople_mobile/presentation/controllers/main_tab_controller.dart';
 import 'package:mople_mobile/presentation/controllers/my_page_controller.dart';
 import 'package:mople_mobile/presentation/controllers/stamp_controller.dart';
 import 'package:mople_mobile/presentation/controllers/unlock_controller.dart';
-import 'package:mople_mobile/presentation/pages/auth/login_page.dart';
-import 'package:mople_mobile/presentation/pages/my/completion_card_page.dart';
-import 'package:mople_mobile/presentation/pages/my/profile_edit_page.dart';
-import 'package:mople_mobile/presentation/pages/my/settings_page.dart';
-import 'package:mople_mobile/presentation/pages/my/stamp_page.dart';
-import 'package:mople_mobile/presentation/pages/my/unlock_page.dart';
+import 'package:mople_mobile/presentation/pages/auth/view/login_page.dart';
+import 'package:mople_mobile/presentation/pages/my/view/completion_card_page.dart';
+import 'package:mople_mobile/presentation/pages/my/view/profile_edit_page.dart';
+import 'package:mople_mobile/presentation/pages/my/view/settings_page.dart';
+import 'package:mople_mobile/presentation/pages/my/view/stamp_page.dart';
+import 'package:mople_mobile/presentation/pages/my/view/unlock_page.dart';
 
 /// 마이페이지 — `GET /users/me` 의 프로필·활동 요약.
 class MyPage extends ConsumerStatefulWidget {

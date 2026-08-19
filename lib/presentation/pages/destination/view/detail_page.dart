@@ -8,22 +8,32 @@ import 'package:mople_mobile/core/constants/spacing.dart';
 import 'package:mople_mobile/core/widgets/widgets.dart';
 import 'package:mople_mobile/data/models/models.dart';
 import 'package:mople_mobile/presentation/controllers/place_detail_controller.dart';
-import 'package:mople_mobile/presentation/pages/destination/congestion_page.dart';
-import 'package:mople_mobile/presentation/pages/destination/map_page.dart';
-import 'package:mople_mobile/presentation/pages/destination/review_page.dart';
+import 'package:mople_mobile/presentation/pages/destination/view/congestion_page.dart';
+import 'package:mople_mobile/presentation/pages/destination/view/map_page.dart';
+import 'package:mople_mobile/presentation/pages/destination/view/review_page.dart';
 
 /// 장소 상세 — `GET /places/{placeId}` + `GET /places/{placeId}/congestion`.
 ///
 /// 찜(`POST /places/{placeId}/like`)은 낙관적 반영 후 실패 시 되돌린다.
-class DetailPage extends ConsumerWidget {
+class DetailPage extends ConsumerStatefulWidget {
   const DetailPage({super.key, required this.destinationId});
 
   final String destinationId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(placeDetailProvider(destinationId));
-    final notifier = ref.read(placeDetailProvider(destinationId).notifier);
+  ConsumerState<DetailPage> createState() => _DetailPageState();
+}
+
+class _DetailPageState extends ConsumerState<DetailPage> {
+  bool _isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(placeDetailProvider(widget.destinationId));
+
+    final notifier = ref.read(
+      placeDetailProvider(widget.destinationId).notifier,
+    );
 
     return Scaffold(
       backgroundColor: AppColors.surfacePage,
@@ -46,6 +56,10 @@ class DetailPage extends ConsumerWidget {
                         onBack: () => context.pop(),
                         onToggleLike: notifier.toggleLike,
                       ),
+
+                      // ─────────────────────────────────────
+                      // 장소 기본 정보
+                      // ─────────────────────────────────────
                       Padding(
                         padding: const EdgeInsets.fromLTRB(
                           AppSpacing.space5,
@@ -81,6 +95,10 @@ class DetailPage extends ConsumerWidget {
                           ],
                         ),
                       ),
+
+                      // ─────────────────────────────────────
+                      // 평점 / 태그 / 설명
+                      // ─────────────────────────────────────
                       Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: AppSpacing.space5,
@@ -93,7 +111,9 @@ class DetailPage extends ConsumerWidget {
                                 value: place.reviewSummary!.avgRating,
                                 showValue: true,
                               ),
+
                             const SizedBox(height: AppSpacing.space3),
+
                             Wrap(
                               spacing: AppSpacing.space2,
                               runSpacing: AppSpacing.space2,
@@ -104,20 +124,27 @@ class DetailPage extends ConsumerWidget {
                                   AppTag(label: place.hours),
                               ],
                             ),
-                            if (place.description.isNotEmpty) ...[
-                              const SizedBox(height: AppSpacing.space4),
-                              Text(
-                                place.description,
-                                style: AppTextStyle.body.copyWith(
-                                  color: AppColors.textSecondary,
-                                  height: 1.7,
-                                ),
+
+                            // 설명
+                            if (place.description.isNotEmpty)
+                              _DescriptionSection(
+                                description: place.description,
+                                isExpanded: _isExpanded,
+                                onToggle: () {
+                                  setState(() {
+                                    _isExpanded = !_isExpanded;
+                                  });
+                                },
                               ),
-                            ],
                           ],
                         ),
                       ),
+
                       const SizedBox(height: AppSpacing.space5),
+
+                      // ─────────────────────────────────────
+                      // 실시간 혼잡도
+                      // ─────────────────────────────────────
                       Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: AppSpacing.space5,
@@ -125,11 +152,16 @@ class DetailPage extends ConsumerWidget {
                         child: _CongestionSection(
                           state: state,
                           onTap: () => context.push(
-                            CongestionPage(destinationId: destinationId),
+                            CongestionPage(destinationId: widget.destinationId),
                           ),
                         ),
                       ),
+
                       const SizedBox(height: AppSpacing.space5),
+
+                      // ─────────────────────────────────────
+                      // 위치
+                      // ─────────────────────────────────────
                       Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: AppSpacing.space5,
@@ -144,19 +176,30 @@ class DetailPage extends ConsumerWidget {
                               ),
                             ),
                             const SizedBox(height: AppSpacing.space3),
-                            GestureDetector(
-                              onTap: () =>
-                                  context.push(MapPage(destination: place.map)),
-                              child: const MapPreviewCard(
-                                height: 150,
-                                pins: 1,
-                                label: '지도에서 보기',
+                            Material(
+                              color: Colors.transparent,
+                              borderRadius: AppRadius.radiusLg,
+                              clipBehavior: Clip.antiAlias,
+                              child: InkWell(
+                                onTap: () => context.push(
+                                  MapPage(destination: place.map),
+                                ),
+                                child: const MapPreviewCard(
+                                  height: 150,
+                                  pins: 1,
+                                  label: '지도에서 보기',
+                                ),
                               ),
                             ),
                           ],
                         ),
                       ),
+
                       const SizedBox(height: AppSpacing.space5),
+
+                      // ─────────────────────────────────────
+                      // 후기
+                      // ─────────────────────────────────────
                       Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: AppSpacing.space5,
@@ -170,10 +213,10 @@ class DetailPage extends ConsumerWidget {
                                 fontWeight: AppFont.bold,
                               ),
                             ),
-                            GestureDetector(
-                              onTap: () => context.push(
+                            TextButton(
+                              onPressed: () => context.push(
                                 ReviewPage(
-                                  targetId: destinationId,
+                                  targetId: widget.destinationId,
                                   destinationTitle: place.name,
                                 ),
                               ),
@@ -187,31 +230,57 @@ class DetailPage extends ConsumerWidget {
                           ],
                         ),
                       ),
+
                       const SizedBox(height: AppSpacing.space6),
                     ],
                   ),
                 ),
               ),
             ),
+
+            // ─────────────────────────────────────────────
+            // 하단 고정 액션 바
+            // ─────────────────────────────────────────────
             AppBottomActionBar(
               child: Row(
                 children: [
-                  AppButton(
-                    label: '길찾기',
-                    variant: AppButtonVariant.outline,
-                    onPressed: () => context.push(const MapPage()),
+                  Expanded(
+                    child: AppButton(
+                      label: '길찾기',
+                      variant: AppButtonVariant.outline,
+                      width: double.infinity,
+                      onPressed: () {
+                        final detail = state.detail?.value;
+
+                        if (detail == null) {
+                          return;
+                        }
+
+                        context.push(MapPage(destination: detail.map));
+                      },
+                    ),
                   ),
+
                   const SizedBox(width: AppSpacing.space3),
+
                   Expanded(
                     child: AppButton(
                       label: '후기 보기',
                       width: double.infinity,
-                      onPressed: () => context.push(
-                        ReviewPage(
-                          targetId: destinationId,
-                          destinationTitle: state.detail?.value?.name ?? '',
-                        ),
-                      ),
+                      onPressed: () {
+                        final detail = state.detail?.value;
+
+                        if (detail == null) {
+                          return;
+                        }
+
+                        context.push(
+                          ReviewPage(
+                            targetId: widget.destinationId,
+                            destinationTitle: detail.name,
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ],
@@ -219,6 +288,56 @@ class DetailPage extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// 설명 영역
+// ─────────────────────────────────────────────────────────────
+
+class _DescriptionSection extends StatelessWidget {
+  const _DescriptionSection({
+    required this.description,
+    required this.isExpanded,
+    required this.onToggle,
+  });
+
+  final String description;
+  final bool isExpanded;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.space4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            description,
+            maxLines: isExpanded ? null : 4,
+            overflow: isExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
+            style: AppTextStyle.body.copyWith(
+              color: AppColors.textSecondary,
+              height: 1.7,
+            ),
+          ),
+
+          const SizedBox(height: AppSpacing.space2),
+
+          GestureDetector(
+            onTap: onToggle,
+            child: Text(
+              isExpanded ? '접기' : '더보기',
+              style: AppTextStyle.caption.copyWith(
+                fontWeight: AppFont.semibold,
+                color: AppColors.brandAccent,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -246,8 +365,20 @@ class _Header extends StatelessWidget {
         SizedBox(
           height: 280,
           width: double.infinity,
-          child: AppNetworkImage(url: image ?? ''),
+          child: image == null || image.isEmpty
+              ? const ColoredBox(
+                  color: AppColors.surfaceCard,
+                  child: Center(
+                    child: Icon(
+                      Icons.image_not_supported_outlined,
+                      size: 48,
+                      color: AppColors.textTertiary,
+                    ),
+                  ),
+                )
+              : AppNetworkImage(url: image),
         ),
+
         Positioned(
           top: AppSpacing.space2,
           left: AppSpacing.space2,
@@ -262,13 +393,17 @@ class _Header extends StatelessWidget {
                   variant: AppIconButtonVariant.solid,
                   onPressed: onBack,
                 ),
+
                 const Spacer(),
+
                 AppIconButton(
                   icon: Icon(
-                    Icons.favorite_rounded,
+                    liked
+                        ? Icons.favorite_rounded
+                        : Icons.favorite_border_rounded,
                     color: liked ? AppColors.brandAccent : AppColors.neutral700,
                   ),
-                  semanticLabel: '찜',
+                  semanticLabel: liked ? '찜 해제' : '찜',
                   variant: AppIconButtonVariant.solid,
                   onPressed: onToggleLike,
                 ),
@@ -280,6 +415,10 @@ class _Header extends StatelessWidget {
     );
   }
 }
+
+// ─────────────────────────────────────────────────────────────
+// 혼잡도
+// ─────────────────────────────────────────────────────────────
 
 class _CongestionSection extends StatelessWidget {
   const _CongestionSection({required this.state, required this.onTap});
@@ -296,7 +435,9 @@ class _CongestionSection extends StatelessWidget {
           '실시간 혼잡도',
           style: AppTextStyle.bodyLg.copyWith(fontWeight: AppFont.bold),
         ),
+
         const SizedBox(height: AppSpacing.space3),
+
         if (state.congestionUnavailable)
           Text(
             '혼잡도 정보가 아직 없어요.',
@@ -323,9 +464,11 @@ class _CongestionSection extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          if (congestion.level != null)
+                          if (congestion.level != null) ...[
                             CongestionBadge(level: congestion.level!.value),
-                          const SizedBox(width: AppSpacing.space2),
+                            const SizedBox(width: AppSpacing.space2),
+                          ],
+
                           Expanded(
                             child: Text(
                               congestion.recommendedTime.isEmpty
@@ -336,6 +479,7 @@ class _CongestionSection extends StatelessWidget {
                               ),
                             ),
                           ),
+
                           const Icon(
                             Icons.chevron_right_rounded,
                             size: 16,
@@ -343,7 +487,9 @@ class _CongestionSection extends StatelessWidget {
                           ),
                         ],
                       ),
+
                       const SizedBox(height: AppSpacing.space3),
+
                       Row(
                         children: [
                           const Icon(
@@ -351,7 +497,9 @@ class _CongestionSection extends StatelessWidget {
                             size: 14,
                             color: AppColors.textSecondary,
                           ),
+
                           const SizedBox(width: 4),
+
                           Text(
                             '주차 ${congestion.parkingAvailable ? '가능' : '불가'}',
                             style: AppTextStyle.caption.copyWith(

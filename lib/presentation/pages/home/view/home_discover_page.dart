@@ -6,9 +6,9 @@ import 'package:mople_mobile/core/widgets/widgets.dart';
 import 'package:mople_mobile/data/models/models.dart';
 import 'package:mople_mobile/presentation/controllers/home_controller.dart';
 import 'package:mople_mobile/presentation/controllers/main_tab_controller.dart';
-import 'package:mople_mobile/presentation/pages/destination/ai_trip_page.dart';
-import 'package:mople_mobile/presentation/pages/destination/course_page.dart';
-import 'package:mople_mobile/presentation/pages/plan/plan_page.dart';
+import 'package:mople_mobile/presentation/pages/destination/view/ai_trip_page.dart';
+import 'package:mople_mobile/presentation/pages/destination/view/course_page.dart';
+import 'package:mople_mobile/presentation/pages/plan/view/plan_page.dart';
 
 /// 코스 둘러보기 — 홈 응답(`GET /home`)의 추천 코스를 그대로 보여준다.
 class HomeDiscoverPage extends ConsumerStatefulWidget {

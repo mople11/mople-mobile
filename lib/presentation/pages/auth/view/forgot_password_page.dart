@@ -9,7 +9,7 @@ import 'package:mople_mobile/core/widgets/widgets.dart';
 import 'package:mople_mobile/data/models/models.dart';
 import 'package:mople_mobile/presentation/controllers/auth_controller.dart';
 import 'package:mople_mobile/presentation/controllers/base/async_result.dart';
-import 'package:mople_mobile/presentation/pages/auth/signup_page.dart';
+import 'package:mople_mobile/presentation/pages/auth/view/signup_page.dart';
 
 enum _ForgotStep { email, code, reset, done }
 

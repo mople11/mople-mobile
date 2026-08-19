@@ -5,7 +5,7 @@ import 'package:mople_mobile/core/constants/font.dart';
 import 'package:mople_mobile/core/constants/radius.dart';
 import 'package:mople_mobile/core/constants/spacing.dart';
 import 'package:mople_mobile/core/widgets/widgets.dart';
-import 'package:mople_mobile/presentation/pages/plan/results_page.dart';
+import 'package:mople_mobile/presentation/pages/plan/view/results_page.dart';
 
 class PlanPage extends StatefulWidget {
   const PlanPage({super.key});

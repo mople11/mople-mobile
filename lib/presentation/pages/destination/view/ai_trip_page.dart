@@ -10,7 +10,7 @@ import 'package:mople_mobile/core/widgets/widgets.dart';
 import 'package:mople_mobile/data/models/models.dart';
 import 'package:mople_mobile/presentation/controllers/base/async_result.dart';
 import 'package:mople_mobile/presentation/controllers/course_controller.dart';
-import 'package:mople_mobile/presentation/pages/destination/course_page.dart';
+import 'package:mople_mobile/presentation/pages/destination/view/course_page.dart';
 
 /// AI 맞춤 코스 — `POST /recommend/ai`.
 ///
