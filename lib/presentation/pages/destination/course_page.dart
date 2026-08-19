@@ -105,7 +105,7 @@ class _CoursePageState extends ConsumerState<CoursePage> {
                           child: Stack(
                             fit: StackFit.expand,
                             children: [
-                              Image.network(d.image, fit: BoxFit.cover),
+                              AppNetworkImage(url: d.image),
                               DecoratedBox(
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(

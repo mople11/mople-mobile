@@ -17,8 +17,7 @@ class ForgotPasswordPage extends ConsumerStatefulWidget {
   const ForgotPasswordPage({super.key});
 
   @override
-  ConsumerState<ForgotPasswordPage> createState() =>
-      _ForgotPasswordPageState();
+  ConsumerState<ForgotPasswordPage> createState() => _ForgotPasswordPageState();
 }
 
 class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
@@ -321,19 +320,17 @@ class _ResetStep extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppSpacing.space5),
-        AppTextField(
+        AppPasswordField(
           label: '새 비밀번호',
           placeholder: '8자 이상 입력해주세요',
           controller: newPwController,
-          obscureText: true,
           enabled: !submitting,
         ),
         const SizedBox(height: AppSpacing.space4),
-        AppTextField(
+        AppPasswordField(
           label: '새 비밀번호 확인',
           placeholder: '비밀번호를 다시 입력해주세요',
           controller: newPwCheckController,
-          obscureText: true,
           enabled: !submitting,
           errorText: error,
         ),

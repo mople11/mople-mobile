@@ -42,7 +42,11 @@ enum CongestionLevel {
 enum TrafficLevel {
   smooth('원활'),
   slow('서행'),
-  jam('정체');
+  jam('정체'),
+
+  /// 서버가 해당 구간의 소통 정보를 갖고 있지 않을 때 보내는 값.
+  /// 명세에는 없지만 실제 응답의 대부분이 이 값이라 정상 값으로 취급한다.
+  unknown('정보없음');
 
   const TrafficLevel(this.value);
 

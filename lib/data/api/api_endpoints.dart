@@ -3,10 +3,12 @@
 /// 여기에는 경로/기본 URL 만 둔다. 실제 통신(Dio 클라이언트, 인터셉터, repository)은
 /// 연동 단계에서 별도로 추가한다.
 abstract final class ApiEndpoints {
-  static const localBaseUrl = 'https://eodiganam.duckdns.org/api/v1';
-
-  /// 배포 예정 주소(변경될 수 있음).
-  static const remoteBaseUrl = 'https://api-odiganam.duckdns.org/api/v1';
+  /// 실서버 주소. 디버그·릴리스 모두 이 주소를 쓴다.
+  ///
+  /// 전에는 릴리스만 `api-odiganam.duckdns.org` 를 봤는데 그 호스트는 DNS 에
+  /// 등록돼 있지 않아(조회 실패) **릴리스 빌드의 모든 요청이 실패**했다.
+  /// 배포 주소가 실제로 뜨면 그때 릴리스 분기를 다시 넣는다.
+  static const baseUrl = 'https://eodiganam.duckdns.org/api/v1';
 
   // ── Home ────────────────────────────────────────────────
   static const home = '/home';

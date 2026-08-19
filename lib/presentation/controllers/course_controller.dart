@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mople_mobile/core/mock/eodiganam_data.dart';
 import 'package:mople_mobile/data/models/models.dart';
 import 'package:mople_mobile/data/repositories/repositories.dart';
 import 'package:mople_mobile/presentation/controllers/base/async_result.dart';
@@ -50,7 +51,9 @@ class CourseState {
   final String? courseId;
 
   AiRecommendRequest get recommendRequest => AiRecommendRequest(
-    mood: mood,
+    // MoodSelector 는 화면 강조용 영문 코드(`heal` 등)를 상태로 들고 있다.
+    // 서버는 companion/transport 처럼 한글 라벨을 기대하므로 변환해서 보낸다.
+    mood: EodiganamData.moodLabel(mood),
     companion: companion,
     transport: transport,
     timeAvailable: timeAvailable,

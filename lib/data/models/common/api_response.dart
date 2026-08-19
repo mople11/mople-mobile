@@ -93,6 +93,12 @@ abstract final class ApiErrorCode {
   static const notImplemented = 'NOT_IMPLEMENTED';
 
   // Auth
+  /// 인증 헤더가 없거나 액세스 토큰이 만료됐을 때. (명세에는 없고 실제 응답에만 있다)
+  static const authRequired = 'AUTH_401';
+
+  /// 토큰 형식이 틀렸거나 이미 폐기됐을 때.
+  static const invalidToken = 'INVALID_TOKEN';
+
   static const duplicateId = 'DUPLICATE_ID';
   static const codeMismatch = 'CODE_MISMATCH';
   static const codeExpired = 'CODE_EXPIRED';
@@ -134,6 +140,8 @@ abstract final class ApiErrorCode {
     network: '네트워크 연결을 확인해주세요.',
     validation: '입력값을 다시 확인해주세요.',
     notImplemented: '아직 서버와 연동되지 않은 기능입니다.',
+    authRequired: '로그인이 필요합니다.',
+    invalidToken: '세션이 만료되었습니다. 다시 로그인해주세요.',
     duplicateId: '이미 사용 중인 아이디입니다.',
     codeMismatch: '인증번호가 일치하지 않습니다.',
     codeExpired: '인증번호가 만료되었습니다.',

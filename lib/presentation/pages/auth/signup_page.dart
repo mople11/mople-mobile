@@ -24,8 +24,6 @@ class _SignupPageState extends ConsumerState<SignupPage> {
   final _pwCheckController = TextEditingController();
   final _codeController = TextEditingController();
 
-  bool _showPw = false;
-  bool _showPw2 = false;
   bool _agree = false;
   bool _done = false;
   bool _submitting = false;
@@ -306,9 +304,11 @@ class _SignupPageState extends ConsumerState<SignupPage> {
             errorText: (idAvailable == false && !idChanged)
                 ? '이미 사용 중인 아이디예요.'
                 : null,
-            suffixIcon: TextButton(
+            suffixIcon: AppButton(
+              label: idChecking ? '확인 중' : '중복확인',
+              variant: AppButtonVariant.link,
+              size: AppButtonSize.sm,
               onPressed: idChecking ? null : _checkId,
-              child: Text(idChecking ? '확인 중' : '중복확인'),
             ),
           ),
           if (idAvailable == true && !idChanged) ...[
@@ -332,15 +332,15 @@ class _SignupPageState extends ConsumerState<SignupPage> {
             enabled: _verifiedCode == null,
             onChanged: (_) => setState(() {}),
             pattern: r'[a-zA-Z0-9@._+-]',
-            suffixIcon: TextButton(
+            suffixIcon: AppButton(
+              label: _verifiedCode != null
+                  ? '인증완료'
+                  : (auth.emailCodeSent ? '재발송' : '인증번호 발송'),
+              variant: AppButtonVariant.link,
+              size: AppButtonSize.sm,
               onPressed: (emailSending || _verifiedCode != null)
                   ? null
                   : _sendEmailCode,
-              child: Text(
-                _verifiedCode != null
-                    ? '인증완료'
-                    : (auth.emailCodeSent ? '재발송' : '인증번호 발송'),
-              ),
             ),
           ),
           if (codeSent) ...[
@@ -349,9 +349,11 @@ class _SignupPageState extends ConsumerState<SignupPage> {
               label: '인증번호',
               placeholder: '6자리 숫자를 입력해주세요',
               controller: _codeController,
-              suffixIcon: TextButton(
+              suffixIcon: AppButton(
+                label: emailConfirming ? '확인 중' : '인증확인',
+                variant: AppButtonVariant.link,
+                size: AppButtonSize.sm,
                 onPressed: emailConfirming ? null : _confirmEmailCode,
-                child: Text(emailConfirming ? '확인 중' : '인증확인'),
               ),
             ),
           ],
@@ -363,36 +365,16 @@ class _SignupPageState extends ConsumerState<SignupPage> {
             ),
           ],
           const SizedBox(height: AppSpacing.space4),
-          AppTextField(
+          AppPasswordField(
             label: '비밀번호',
             placeholder: '8자 이상 입력해주세요',
             controller: _pwController,
-            obscureText: !_showPw,
-            suffixIcon: IconButton(
-              icon: Icon(
-                _showPw
-                    ? Icons.visibility_off_rounded
-                    : Icons.visibility_rounded,
-                color: AppColors.textTertiary,
-              ),
-              onPressed: () => setState(() => _showPw = !_showPw),
-            ),
           ),
           const SizedBox(height: AppSpacing.space4),
-          AppTextField(
+          AppPasswordField(
             label: '비밀번호 확인',
             placeholder: '비밀번호를 다시 입력해주세요',
             controller: _pwCheckController,
-            obscureText: !_showPw2,
-            suffixIcon: IconButton(
-              icon: Icon(
-                _showPw2
-                    ? Icons.visibility_off_rounded
-                    : Icons.visibility_rounded,
-                color: AppColors.textTertiary,
-              ),
-              onPressed: () => setState(() => _showPw2 = !_showPw2),
-            ),
           ),
           const SizedBox(height: AppSpacing.space5),
           AppCheckbox(
@@ -417,16 +399,7 @@ class _SignupPageState extends ConsumerState<SignupPage> {
                   color: AppColors.textTertiary,
                 ),
               ),
-              GestureDetector(
-                onTap: () => context.pop(),
-                child: Text(
-                  '로그인',
-                  style: AppTextStyle.caption.copyWith(
-                    color: AppColors.textBrand,
-                    fontWeight: AppFont.bold,
-                  ),
-                ),
-              ),
+              AppTextLink(label: '로그인', onTap: () => context.pop()),
             ],
           ),
         ],

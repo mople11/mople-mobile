@@ -145,9 +145,8 @@ class DetailPage extends ConsumerWidget {
                             ),
                             const SizedBox(height: AppSpacing.space3),
                             GestureDetector(
-                              onTap: () => context.push(
-                                MapPage(destination: place.map),
-                              ),
+                              onTap: () =>
+                                  context.push(MapPage(destination: place.map)),
                               child: const MapPreviewCard(
                                 height: 150,
                                 pins: 1,
@@ -247,22 +246,7 @@ class _Header extends StatelessWidget {
         SizedBox(
           height: 280,
           width: double.infinity,
-          child: image == null
-              ? Container(
-                  color: AppColors.surfaceSunken,
-                  alignment: Alignment.center,
-                  child: const Icon(
-                    Icons.image_not_supported_rounded,
-                    size: 32,
-                    color: AppColors.textTertiary,
-                  ),
-                )
-              : Image.network(
-                  image,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) =>
-                      Container(color: AppColors.surfaceSunken),
-                ),
+          child: AppNetworkImage(url: image ?? ''),
         ),
         Positioned(
           top: AppSpacing.space2,
@@ -282,9 +266,7 @@ class _Header extends StatelessWidget {
                 AppIconButton(
                   icon: Icon(
                     Icons.favorite_rounded,
-                    color: liked
-                        ? AppColors.brandAccent
-                        : AppColors.neutral700,
+                    color: liked ? AppColors.brandAccent : AppColors.neutral700,
                   ),
                   semanticLabel: '찜',
                   variant: AppIconButtonVariant.solid,
@@ -318,9 +300,7 @@ class _CongestionSection extends StatelessWidget {
         if (state.congestionUnavailable)
           Text(
             '혼잡도 정보가 아직 없어요.',
-            style: AppTextStyle.caption.copyWith(
-              color: AppColors.textTertiary,
-            ),
+            style: AppTextStyle.caption.copyWith(color: AppColors.textTertiary),
           )
         else
           AsyncView<PlaceCongestion>(

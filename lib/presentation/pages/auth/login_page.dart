@@ -23,7 +23,6 @@ class LoginPage extends ConsumerStatefulWidget {
 class _LoginPageState extends ConsumerState<LoginPage> {
   final _idController = TextEditingController();
   final _pwController = TextEditingController();
-  bool _showPassword = false;
   bool _submitting = false;
 
   @override
@@ -138,34 +137,19 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     enabled: !_submitting,
                   ),
                   const SizedBox(height: AppSpacing.space4),
-                  AppTextField(
+                  AppPasswordField(
                     label: '비밀번호',
                     placeholder: '비밀번호를 입력해주세요',
                     controller: _pwController,
                     enabled: !_submitting,
-                    obscureText: !_showPassword,
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _showPassword
-                            ? Icons.visibility_off_rounded
-                            : Icons.visibility_rounded,
-                        color: AppColors.textTertiary,
-                      ),
-                      onPressed: () =>
-                          setState(() => _showPassword = !_showPassword),
-                    ),
                   ),
                   const SizedBox(height: AppSpacing.space2),
                   Align(
                     alignment: Alignment.centerRight,
-                    child: GestureDetector(
+                    child: AppTextLink(
+                      label: '비밀번호를 잊으셨나요?',
+                      tone: AppTextLinkTone.plain,
                       onTap: () => context.push(const ForgotPasswordPage()),
-                      child: Text(
-                        '비밀번호를 잊으셨나요?',
-                        style: AppTextStyle.caption.copyWith(
-                          fontWeight: AppFont.semibold,
-                        ),
-                      ),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.space5),
@@ -237,15 +221,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     color: AppColors.textTertiary,
                   ),
                 ),
-                GestureDetector(
+                AppTextLink(
+                  label: '회원가입',
                   onTap: () => context.push(const SignupPage()),
-                  child: Text(
-                    '회원가입',
-                    style: AppTextStyle.caption.copyWith(
-                      color: AppColors.textBrand,
-                      fontWeight: AppFont.bold,
-                    ),
-                  ),
                 ),
               ],
             ),

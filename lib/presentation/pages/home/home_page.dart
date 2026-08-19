@@ -66,7 +66,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          '오늘 · 7월 7일',
+                          _todayLabel(),
                           style: AppTextStyle.caption.copyWith(
                             color: AppColors.textTertiary,
                           ),
@@ -93,7 +93,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               onTap: () =>
                   ref.read(mainTabProvider.notifier).switchTab('search'),
               child: const AbsorbPointer(
-                child: AppSearchBar(placeholder: '여수, 순천, 담양…'),
+                child: AppSearchBar(placeholder: '전남 지역을 검색해보세요!'),
               ),
             ),
             const SizedBox(height: AppSpacing.space4),
@@ -102,7 +102,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               loadingHeight: 132,
               onRetry: () => ref.read(homeProvider.notifier).loadWeather(),
               builder: (weather) => WeatherCard(
-                region: '전남',
+                region: '현재 날씨',
                 condition: weatherConditionFromKorean(weather.weatherType),
                 temp: weather.temp,
                 // 서버가 최고/최저를 내려주지 않아 현재 기온을 그대로 쓴다.
@@ -210,4 +210,10 @@ class _HomePageState extends ConsumerState<HomePage> {
       ),
     );
   }
+}
+
+/// 홈 상단에 표시할 오늘 날짜. 예: `오늘 · 8월 18일`
+String _todayLabel() {
+  final now = DateTime.now();
+  return '오늘 · ${now.month}월 ${now.day}일';
 }

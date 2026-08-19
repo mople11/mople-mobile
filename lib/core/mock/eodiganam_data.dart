@@ -361,6 +361,20 @@ abstract final class EodiganamData {
     ),
   ];
 
+  /// [moods] 의 UI 코드(`value`, 예: `heal`)를 서버 전송용 한글 라벨(`힐링`)로 바꾼다.
+  ///
+  /// `POST /recommend/ai` 는 `companion`/`transport` 처럼 한글 값을 기대하는데,
+  /// `MoodSelector` 는 화면 강조 표시를 위해 영문 코드를 상태로 들고 있어서
+  /// 그대로 보내면 서버가 mood 를 인식하지 못한다. 목록에 없는 값(빈 문자열 등)은
+  /// 그대로 돌려준다.
+  static String moodLabel(String value) => moods
+      .firstWhere(
+        (m) => m.value == value,
+        orElse: () =>
+            MoodOption(value: value, label: value, emoji: '', description: ''),
+      )
+      .label;
+
   static const RouteInfo route = RouteInfo(
     title: '순천 힐링 하루 코스',
     summary: '맑은 가을 날씨에 딱 맞는 느긋한 자연 코스',

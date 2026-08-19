@@ -152,7 +152,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             rows: [
               _SettingsRow(
                 label: '푸시 알림',
-                trailing: Switch(
+                trailing: AppSwitch(
                   value: settings.pushEnabled,
                   onChanged: (v) => _patch(
                     () => notifier.setPush(v),
@@ -162,7 +162,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               ),
               _SettingsRow(
                 label: '골든아워 알림',
-                trailing: Switch(
+                trailing: AppSwitch(
                   value: settings.goldenHourEnabled,
                   onChanged: (v) => _patch(
                     () => notifier.setGoldenHour(v),
@@ -172,7 +172,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               ),
               _SettingsRow(
                 label: '위치 권한',
-                trailing: Switch(
+                trailing: AppSwitch(
                   value: settings.locationGranted,
                   onChanged: (v) => _patch(
                     () => notifier.setLocationPermission(v),
@@ -196,19 +196,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     );
                   },
                 ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      _languageLabels[settings.language] ?? '한국어',
-                      style: const TextStyle(color: AppColors.textTertiary),
-                    ),
-                    const Icon(
-                      Icons.chevron_right_rounded,
-                      size: 15,
-                      color: AppColors.textTertiary,
-                    ),
-                  ],
+                trailing: _ValueTrailing(
+                  _languageLabels[settings.language] ?? '한국어',
                 ),
               ),
             ],
@@ -227,20 +216,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     _flash('기본 출발 지역을 $v(으)로 변경했어요.');
                   },
                 ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      _region,
-                      style: const TextStyle(color: AppColors.textTertiary),
-                    ),
-                    const Icon(
-                      Icons.chevron_right_rounded,
-                      size: 15,
-                      color: AppColors.textTertiary,
-                    ),
-                  ],
-                ),
+                trailing: _ValueTrailing(_region),
               ),
               _SettingsRow(
                 label: '선호 이동수단',
@@ -253,24 +229,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     _flash('선호 이동수단을 $v(으)로 변경했어요.');
                   },
                 ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      _transport,
-                      style: const TextStyle(color: AppColors.textTertiary),
-                    ),
-                    const Icon(
-                      Icons.chevron_right_rounded,
-                      size: 15,
-                      color: AppColors.textTertiary,
-                    ),
-                  ],
-                ),
+                trailing: _ValueTrailing(_transport),
               ),
               _SettingsRow(
                 label: '우천 시 실내 코스 우선',
-                trailing: Switch(
+                trailing: AppSwitch(
                   value: _rainPreference,
                   onChanged: (v) {
                     setState(() => _rainPreference = v);
@@ -286,11 +249,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               _SettingsRow(
                 label: '회원정보 관리',
                 onTap: () => context.push(ProfileEditPage()),
-                trailing: const Icon(
-                  Icons.chevron_right_rounded,
-                  size: 16,
-                  color: AppColors.textTertiary,
-                ),
+                trailing: const _Chevron(),
               ),
               const _SettingsRow(
                 label: '버전',
@@ -307,29 +266,17 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               _SettingsRow(
                 label: '이용약관',
                 onTap: () => _comingSoon('이용약관'),
-                trailing: const Icon(
-                  Icons.chevron_right_rounded,
-                  size: 16,
-                  color: AppColors.textTertiary,
-                ),
+                trailing: const _Chevron(),
               ),
               _SettingsRow(
                 label: '개인정보처리방침',
                 onTap: () => _comingSoon('개인정보처리방침'),
-                trailing: const Icon(
-                  Icons.chevron_right_rounded,
-                  size: 16,
-                  color: AppColors.textTertiary,
-                ),
+                trailing: const _Chevron(),
               ),
               _SettingsRow(
                 label: '문의하기',
                 onTap: () => _comingSoon('문의하기'),
-                trailing: const Icon(
-                  Icons.chevron_right_rounded,
-                  size: 16,
-                  color: AppColors.textTertiary,
-                ),
+                trailing: const _Chevron(),
               ),
             ],
           ),
@@ -403,5 +350,43 @@ class _SettingsRow extends StatelessWidget {
 
     if (onTap == null) return content;
     return InkWell(onTap: onTap, child: content);
+  }
+}
+
+/// "값 + 화살표" 형태의 행 우측 요소. 선택형 설정 행이 모두 같은 모양이라
+/// 한 곳에서 정의한다.
+class _ValueTrailing extends StatelessWidget {
+  const _ValueTrailing(this.value);
+
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          value,
+          style: AppTextStyle.body.copyWith(color: AppColors.textTertiary),
+        ),
+        const _Chevron(size: 15),
+      ],
+    );
+  }
+}
+
+/// 다음 화면으로 이동하는 행의 우측 화살표.
+class _Chevron extends StatelessWidget {
+  const _Chevron({this.size = 16});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Icon(
+      Icons.chevron_right_rounded,
+      size: size,
+      color: AppColors.textTertiary,
+    );
   }
 }

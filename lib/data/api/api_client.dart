@@ -32,13 +32,15 @@ class ApiClient {
             options.headers['Authorization'] = 'Bearer $token';
           }
           _log('→ ${options.method} ${options.uri}');
-          if (options.data != null) _log('  body: ${options.data}');
+          if (options.data != null) {
+            _log('  body: ${_redact(options.data, request: true)}');
+          }
           handler.next(options);
         },
         onResponse: (response, handler) {
           _log(
             '← ${response.statusCode} ${response.requestOptions.uri}\n'
-            '  ${response.data}',
+            '  ${_redact(response.data)}',
           );
           handler.next(response);
         },
@@ -47,7 +49,7 @@ class ApiClient {
             '✖ ${e.type.name} ${e.requestOptions.uri}\n'
             '  status: ${e.response?.statusCode}\n'
             '  message: ${e.message}\n'
-            '  body: ${e.response?.data}',
+            '  body: ${_redact(e.response?.data)}',
           );
           // 저장된 토큰이 만료·폐기됐다는 뜻이므로 세션을 비운다.
           // 화면 전환은 앱 쪽에서 [onUnauthorized] 로 처리한다.
@@ -78,8 +80,47 @@ class ApiClient {
     if (kDebugMode) debugPrint('[API] $message');
   }
 
-  static String get _defaultBaseUrl =>
-      kReleaseMode ? ApiEndpoints.remoteBaseUrl : ApiEndpoints.localBaseUrl;
+  /// 요청·응답 양쪽에서 항상 가리는 키.
+  ///
+  /// 디버그 빌드의 콘솔·Xcode 로그는 파일로 남고 공유되기 쉬워서, 비밀번호와
+  /// 토큰이 그대로 찍히면 그 자체가 유출 경로가 된다.
+  static const _secretKeys = <String>{
+    'pw',
+    'newPw',
+    'currentPw',
+    'password',
+    'accessToken',
+    'refreshToken',
+    'oauthToken',
+  };
+
+  /// **요청 바디에서만** 가리는 키.
+  ///
+  /// `code` 는 요청에서는 이메일 인증번호지만 응답 봉투에서는 에러 코드
+  /// (`WEATHER_FETCH_FAILED` 등)다. 응답까지 가리면 로그로 원인을 못 찾는다.
+  static const _requestOnlySecretKeys = <String>{'code', 'verifyCode'};
+
+  /// 민감한 값을 `***` 로 바꾼 사본을 돌려준다. 중첩된 Map/List 도 따라 들어간다.
+  ///
+  /// [request] 가 true 면 [_requestOnlySecretKeys] 까지 함께 가린다.
+  static Object? _redact(Object? value, {bool request = false}) {
+    if (value is Map) {
+      return {
+        for (final entry in value.entries)
+          entry.key:
+              _secretKeys.contains('${entry.key}') ||
+                  (request && _requestOnlySecretKeys.contains('${entry.key}'))
+              ? '***'
+              : _redact(entry.value, request: request),
+      };
+    }
+    if (value is List) {
+      return value.map((e) => _redact(e, request: request)).toList();
+    }
+    return value;
+  }
+
+  static String get _defaultBaseUrl => ApiEndpoints.baseUrl;
 
   /// `data` 를 [parse] 로 파싱해 돌려준다. `data` 가 없으면(예: 명세 오류) 실패로 취급한다.
   Future<T> requestObject<T>(
@@ -143,8 +184,15 @@ class ApiClient {
     String path, {
     Map<String, dynamic>? query,
     Object? body,
+    Map<String, String>? headers,
   }) async {
-    final json = await _send(method, path, query: query, body: body);
+    final json = await _send(
+      method,
+      path,
+      query: query,
+      body: body,
+      headers: headers,
+    );
     if (!asBool(json['success'])) {
       throw ApiException(_errorFrom(json));
     }
@@ -169,13 +217,14 @@ class ApiClient {
     String path, {
     Map<String, dynamic>? query,
     Object? body,
+    Map<String, String>? headers,
   }) async {
     try {
       final response = await _dio.request<dynamic>(
         path,
         queryParameters: query,
         data: body,
-        options: Options(method: method),
+        options: Options(method: method, headers: headers),
       );
       return asMap(response.data);
     } on DioException catch (e) {

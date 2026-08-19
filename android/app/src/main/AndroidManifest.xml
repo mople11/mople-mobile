@@ -1,4 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- API 통신에 필요하다. debug/profile 매니페스트에만 있으면 릴리스 빌드에서
+         모든 네트워크 요청이 막힌다. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="mople_mobile"
         android:name="${applicationName}"

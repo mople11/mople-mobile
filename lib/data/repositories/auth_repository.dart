@@ -51,12 +51,21 @@ class AuthRepository {
         parse: AuthSession.fromJson,
       );
 
-  /// 서버가 바디에 `refreshToken` 을 **필수**로 요구한다(빠지면 `COMMON_422`).
-  Future<void> logout(String refreshToken) => apiClient.requestVoid(
-    'POST',
-    ApiEndpoints.logout,
-    body: {'refreshToken': refreshToken},
-  );
+  /// 서버가 바디에 `refreshToken` 을, 헤더에 액세스 토큰을 **둘 다** 요구한다.
+  /// (바디가 빠지면 `COMMON_422`, 헤더가 빠지면 `AUTH_401`)
+  ///
+  /// 로그아웃은 화면을 즉시 전환하려고 로컬 세션을 먼저 비운 뒤에 호출한다.
+  /// 그 시점엔 인터셉터가 붙일 토큰이 이미 없으므로, 호출부가 들고 있던
+  /// [accessToken] 을 여기서 헤더에 직접 싣는다.
+  Future<void> logout(String refreshToken, {String? accessToken}) =>
+      apiClient.requestVoid(
+        'POST',
+        ApiEndpoints.logout,
+        body: {'refreshToken': refreshToken},
+        headers: accessToken == null || accessToken.isEmpty
+            ? null
+            : {'Authorization': 'Bearer $accessToken'},
+      );
 
   Future<void> requestPasswordReset(EmailRequest request) =>
       apiClient.requestVoid(

@@ -14,8 +14,7 @@ class CompletionCardPage extends ConsumerStatefulWidget {
   const CompletionCardPage({super.key});
 
   @override
-  ConsumerState<CompletionCardPage> createState() =>
-      _CompletionCardPageState();
+  ConsumerState<CompletionCardPage> createState() => _CompletionCardPageState();
 }
 
 class _CompletionCardPageState extends ConsumerState<CompletionCardPage> {
@@ -86,12 +85,7 @@ class _CardTile extends StatelessWidget {
             SizedBox(
               height: 150,
               width: double.infinity,
-              child: Image.network(
-                card.imageUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) =>
-                    Container(color: AppColors.surfaceSunken),
-              ),
+              child: AppNetworkImage(url: card.imageUrl),
             ),
           Padding(
             padding: const EdgeInsets.all(AppSpacing.space4),

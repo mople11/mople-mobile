@@ -210,17 +210,27 @@ class AuthNotifier extends Notifier<AuthState> {
     state = state.copyWith(session: result);
   }
 
-  /// 서버 로그아웃은 `refreshToken` 을 요구한다. 토큰이 없으면(이미 만료·미로그인)
-  /// 굳이 호출하지 않고 로컬 세션만 정리한다.
+  /// 서버 로그아웃은 `refreshToken`(바디)과 액세스 토큰(헤더)을 둘 다 요구한다.
+  /// 토큰이 없으면(이미 만료·미로그인) 굳이 호출하지 않고 로컬 세션만 정리한다.
   /// 로컬 세션을 **먼저** 비워 화면이 즉시 로그아웃 상태가 되게 한다.
+  ///
+  /// 세션을 비운 뒤에는 인터셉터가 인증 헤더를 붙여줄 수 없으므로, 비우기 전에
+  /// 두 토큰을 모두 확보해 [AuthRepository.logout] 에 넘긴다. 예전에는 이걸
+  /// 놓쳐서 로그아웃 요청이 `AUTH_401` 로 거부됐고, 서버 세션이 그대로 살아
+  /// 있었다.
   ///
   /// 서버 로그아웃은 성공하든 실패하든 사용자가 기다릴 이유가 없다(토큰은 이미
   /// 기기에서 지워졌다). 응답을 기다리면 최대 10초간 화면이 멈춘 것처럼 보인다.
   Future<void> logout() async {
     final refreshToken = AuthTokenStore.refreshToken;
+    final accessToken = AuthTokenStore.accessToken;
     await clearSession();
     if (refreshToken == null || refreshToken.isEmpty) return;
-    unawaited(guardAsync(() => authRepository.logout(refreshToken)));
+    unawaited(
+      guardAsync(
+        () => authRepository.logout(refreshToken, accessToken: accessToken),
+      ),
+    );
   }
 
   // ── 비밀번호 재설정 ────────────────────────────────────────
