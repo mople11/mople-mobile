@@ -3,8 +3,8 @@ import 'package:mople_mobile/core/navigation/app_navigation.dart';
 import 'package:mople_mobile/core/constants/color.dart';
 import 'package:mople_mobile/core/constants/font.dart';
 import 'package:mople_mobile/core/widgets/layout/app_scaffold.dart';
-import 'package:mople_mobile/presentation/pages/auth/login_page.dart';
-import 'package:mople_mobile/presentation/pages/onboarding/onboarding_page.dart';
+import 'package:mople_mobile/presentation/pages/auth/view/login_page.dart';
+import 'package:mople_mobile/presentation/pages/onboarding/view/onboarding_page.dart';
 
 class AppStartPage extends StatelessWidget {
   const AppStartPage({super.key});

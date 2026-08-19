@@ -79,14 +79,25 @@ class StampCheckInResult {
 }
 
 /// `POST /cards/completion` 요청 바디.
+///
+/// 서버 스키마상 `userPhoto` 는 **필수**이며 `format: uri`, `minLength: 1` 이다.
+/// 사진 없이 카드만 만드는 호출은 서버가 받지 않는다.
 class CompletionCardCreateRequest {
-  const CompletionCardCreateRequest({required this.courseId, this.userPhoto});
+  const CompletionCardCreateRequest({
+    required this.courseId,
+    required this.userPhoto,
+  });
 
   final String courseId;
-  final String? userPhoto;
+  final String userPhoto;
 
-  Map<String, dynamic> toJson() =>
-      compactJson({'courseId': courseId, 'userPhoto': userPhoto});
+  bool get isValid => userPhoto.trim().isNotEmpty;
+
+  Map<String, dynamic> toJson() => {
+    // 서버는 courseId 를 integer 로 받는다.
+    'courseId': int.tryParse(courseId) ?? courseId,
+    'userPhoto': userPhoto,
+  };
 }
 
 /// `POST /cards/completion` 의 `data`.

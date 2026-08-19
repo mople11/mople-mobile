@@ -38,6 +38,10 @@ dependencies:
   flutter_svg: ^2.3.0
   smooth_page_indicator: ^2.0.1
   flutter_riverpod: ^3.4.2
+  flutter_secure_storage: ^11.0.0
+  # 로그아웃 표시를 Keychain 과 다른 백엔드에도 남기기 위해 쓴다.
+  path_provider: ^2.1.5
+  kakao_flutter_sdk_user: ^2.0.0+1
 
 dev_dependencies:
   flutter_test:

@@ -1,0 +1,10 @@
+// 카카오 네이티브 앱 키 (로컬 전용 — 이 파일을 Kakao.xcconfig 로 복사해 값을 채운다)
+//
+//   cp ios/Flutter/Kakao.xcconfig.example ios/Flutter/Kakao.xcconfig
+//
+// 카카오 개발자 콘솔 > 앱 설정 > 앱 > 플랫폼 키 > 네이티브 앱 키 값을 넣는다.
+// Info.plist 의 URL Scheme(kakao$(KAKAO_NATIVE_APP_KEY))이 이 값을 참조한다.
+//
+// Kakao.xcconfig 는 .gitignore 에 있으므로 커밋되지 않는다.
+// 값을 비워 두면 카카오 로그인만 비활성화되고 앱은 정상 동작한다.
+KAKAO_NATIVE_APP_KEY =

@@ -5,7 +5,18 @@ import '../../constants/font.dart';
 import '../../constants/radius.dart';
 import '../../constants/spacing.dart';
 
-enum AppButtonVariant { primary, secondary, accent, outline, ghost, danger }
+/// [link] 는 배경 없이 브랜드 색 글자만 쓰는 인라인 액션용 변형이다.
+/// 입력칸 안의 "중복확인" 처럼 머티리얼 기본 [TextButton] 을 쓰면 테마 색이
+/// 그대로 새는 자리를 대신한다.
+enum AppButtonVariant {
+  primary,
+  secondary,
+  accent,
+  outline,
+  ghost,
+  danger,
+  link,
+}
 
 enum AppButtonSize { sm, md, lg }
 
@@ -124,6 +135,11 @@ class _AppButtonColors {
         return const _AppButtonColors(
           background: AppColors.danger,
           foreground: AppColors.textOnBrand,
+        );
+      case AppButtonVariant.link:
+        return const _AppButtonColors(
+          background: Colors.transparent,
+          foreground: AppColors.textBrand,
         );
     }
   }

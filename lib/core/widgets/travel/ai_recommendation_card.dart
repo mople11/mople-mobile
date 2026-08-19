@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../display/app_network_image.dart';
+
 import '../../constants/color.dart';
 import '../../constants/font.dart';
 import '../../constants/radius.dart';
@@ -43,7 +45,7 @@ class AiRecommendationCard extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              Image.network(image, fit: BoxFit.cover),
+              AppNetworkImage(url: image),
               DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(

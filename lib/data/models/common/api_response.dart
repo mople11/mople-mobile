@@ -38,16 +38,21 @@ class ApiResponse<T> {
 /// 명세에 error 객체의 필드 구성이 없어 `code`/`message`/`status` 로 가정했다.
 /// 실제 서버 포맷이 확정되면 이 클래스만 고치면 된다.
 class ApiError {
-  const ApiError({required this.code, this.message, this.status});
+  const ApiError({required this.code, this.message, this.status, this.details});
 
   final String code;
   final String? message;
   final int? status;
 
+  /// 검증 실패(`COMMON_422`) 시 서버가 필드별 사유를 담아 보낸다.
+  /// 예: `{"purpose": ["이 필드는 필수 항목입니다."]}`
+  final Map<String, dynamic>? details;
+
   factory ApiError.fromJson(Map<String, dynamic> json) => ApiError(
     code: asString(json['code'], ApiErrorCode.unknown),
     message: asStringOrNull(json['message']),
     status: json['status'] == null ? null : asInt(json['status']),
+    details: asMapOrNull(json['details']),
   );
 
   /// 네트워크 예외 등 서버 응답이 아예 없을 때 사용.
@@ -59,7 +64,9 @@ class ApiError {
       message ?? ApiErrorCode.describe(code) ?? '잠시 후 다시 시도해주세요.';
 
   @override
-  String toString() => 'ApiError($code, status: $status, message: $message)';
+  String toString() =>
+      'ApiError($code, status: $status, message: $message'
+      '${details == null ? '' : ', details: $details'})';
 }
 
 /// 컨트롤러의 `AsyncState.load` 가 잡아서 [ApiError] 로 환원하는 예외.
@@ -79,10 +86,19 @@ abstract final class ApiErrorCode {
   static const unknown = 'UNKNOWN';
   static const network = 'NETWORK_ERROR';
 
+  /// 서버 공통 검증 실패. 어떤 필드가 왜 틀렸는지는 [ApiError.details] 에 담겨 온다.
+  static const validation = 'COMMON_422';
+
   /// 아직 repository 연동이 되지 않은 호출(개발 중에만 발생).
   static const notImplemented = 'NOT_IMPLEMENTED';
 
   // Auth
+  /// 인증 헤더가 없거나 액세스 토큰이 만료됐을 때. (명세에는 없고 실제 응답에만 있다)
+  static const authRequired = 'AUTH_401';
+
+  /// 토큰 형식이 틀렸거나 이미 폐기됐을 때.
+  static const invalidToken = 'INVALID_TOKEN';
+
   static const duplicateId = 'DUPLICATE_ID';
   static const codeMismatch = 'CODE_MISMATCH';
   static const codeExpired = 'CODE_EXPIRED';
@@ -93,6 +109,9 @@ abstract final class ApiErrorCode {
 
   // Home · 검색·정보
   static const weatherFetchFailed = 'WEATHER_FETCH_FAILED';
+
+  /// 검색 등에서 백엔드가 연동한 외부 API 가 실패했을 때(HTTP 502 로 온다).
+  static const externalApiError = 'EXTERNAL_API_ERROR';
   static const placeNotFound = 'PLACE_NOT_FOUND';
   static const congestionDataUnavailable = 'CONGESTION_DATA_UNAVAILABLE';
   static const trafficDataUnavailable = 'TRAFFIC_DATA_UNAVAILABLE';
@@ -119,7 +138,10 @@ abstract final class ApiErrorCode {
 
   static const Map<String, String> _messages = {
     network: '네트워크 연결을 확인해주세요.',
+    validation: '입력값을 다시 확인해주세요.',
     notImplemented: '아직 서버와 연동되지 않은 기능입니다.',
+    authRequired: '로그인이 필요합니다.',
+    invalidToken: '세션이 만료되었습니다. 다시 로그인해주세요.',
     duplicateId: '이미 사용 중인 아이디입니다.',
     codeMismatch: '인증번호가 일치하지 않습니다.',
     codeExpired: '인증번호가 만료되었습니다.',
@@ -128,6 +150,7 @@ abstract final class ApiErrorCode {
     oauthFailed: '소셜 인증에 실패했습니다.',
     userNotFound: '가입되지 않은 이메일입니다.',
     weatherFetchFailed: '날씨 정보를 불러오지 못했습니다.',
+    externalApiError: '외부 정보를 불러오지 못했습니다.',
     placeNotFound: '존재하지 않는 장소입니다.',
     congestionDataUnavailable: '혼잡도 정보가 없습니다.',
     trafficDataUnavailable: '현재 교통 정보가 없습니다.',

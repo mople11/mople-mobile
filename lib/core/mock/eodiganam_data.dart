@@ -3,13 +3,6 @@ import 'package:mople_mobile/core/widgets/travel/weather_chip.dart';
 
 /// 어디가남 — 목업 데이터. Claude Design 원본 `EODIGANAM_DATA` 를 그대로 옮겼습니다.
 
-WeatherCondition weatherConditionFromKorean(String label) => switch (label) {
-  '맑음' => WeatherCondition.sunny,
-  '비' => WeatherCondition.rain,
-  '바람' => WeatherCondition.wind,
-  _ => WeatherCondition.cloud, // 구름, 흐림, 눈
-};
-
 class CongestionInfo {
   const CongestionInfo({
     required this.level,
@@ -103,11 +96,22 @@ class StampInfo {
     required this.region,
     required this.earned,
     required this.emoji,
+    required this.cityCode,
   });
 
+  /// 화면에 보여줄 한글 시군명.
   final String region;
+
+  /// 목업 전용 획득 여부. 서버 연동 화면에서는 `GET /stamps` 의 `collected` 를 쓴다.
   final bool earned;
+
   final String emoji;
+
+  /// 서버 `collected[]` 와 대조할 시군 코드(로마자).
+  ///
+  /// 서버가 코드/한글명 중 무엇을 내려주는지 실데이터로 확인하지 못했으므로,
+  /// 화면에서는 이 값과 [region] 을 모두 대조한다.
+  final String cityCode;
 }
 
 class UnlockCourseInfo {
@@ -357,6 +361,20 @@ abstract final class EodiganamData {
     ),
   ];
 
+  /// [moods] 의 UI 코드(`value`, 예: `heal`)를 서버 전송용 한글 라벨(`힐링`)로 바꾼다.
+  ///
+  /// `POST /recommend/ai` 는 `companion`/`transport` 처럼 한글 값을 기대하는데,
+  /// `MoodSelector` 는 화면 강조 표시를 위해 영문 코드를 상태로 들고 있어서
+  /// 그대로 보내면 서버가 mood 를 인식하지 못한다. 목록에 없는 값(빈 문자열 등)은
+  /// 그대로 돌려준다.
+  static String moodLabel(String value) => moods
+      .firstWhere(
+        (m) => m.value == value,
+        orElse: () =>
+            MoodOption(value: value, label: value, emoji: '', description: ''),
+      )
+      .label;
+
   static const RouteInfo route = RouteInfo(
     title: '순천 힐링 하루 코스',
     summary: '맑은 가을 날씨에 딱 맞는 느긋한 자연 코스',
@@ -453,19 +471,36 @@ abstract final class EodiganamData {
     ),
   ];
 
+  /// 전라남도 22개 시군(5시 17군) 도장 목록.
+  ///
+  /// 서버 `GET /stamps` 의 `totalCount` 가 22 이므로 전 시군을 나열한다.
+  /// `cityCode` 는 국문 지명의 표준 로마자 표기를 따랐다 — 서버가 실제로 어떤 코드를
+  /// 쓰는지 실데이터로 확인하지 못했으므로, 화면에서는 코드와 한글명을 모두 대조한다.
   static const List<StampInfo> stamps = [
-    StampInfo(region: '여수', earned: true, emoji: '🌊'),
-    StampInfo(region: '순천', earned: true, emoji: '🌿'),
-    StampInfo(region: '담양', earned: true, emoji: '🎋'),
-    StampInfo(region: '목포', earned: true, emoji: '⛴️'),
-    StampInfo(region: '보성', earned: true, emoji: '🍵'),
-    StampInfo(region: '완도', earned: false, emoji: '🏝️'),
-    StampInfo(region: '곡성', earned: false, emoji: '🚂'),
-    StampInfo(region: '구례', earned: true, emoji: '⛰️'),
-    StampInfo(region: '광양', earned: false, emoji: '🌸'),
-    StampInfo(region: '나주', earned: true, emoji: '🍐'),
-    StampInfo(region: '해남', earned: false, emoji: '🧭'),
-    StampInfo(region: '장흥', earned: false, emoji: '🌾'),
+    // ── 시(5) ──────────────────────────────────────────────
+    StampInfo(region: '목포', earned: true, emoji: '⛴️', cityCode: 'mokpo'),
+    StampInfo(region: '여수', earned: true, emoji: '🌊', cityCode: 'yeosu'),
+    StampInfo(region: '순천', earned: true, emoji: '🌿', cityCode: 'suncheon'),
+    StampInfo(region: '나주', earned: true, emoji: '🍐', cityCode: 'naju'),
+    StampInfo(region: '광양', earned: false, emoji: '🌸', cityCode: 'gwangyang'),
+    // ── 군(17) ─────────────────────────────────────────────
+    StampInfo(region: '담양', earned: true, emoji: '🎋', cityCode: 'damyang'),
+    StampInfo(region: '곡성', earned: false, emoji: '🚂', cityCode: 'gokseong'),
+    StampInfo(region: '구례', earned: true, emoji: '⛰️', cityCode: 'gurye'),
+    StampInfo(region: '고흥', earned: false, emoji: '🚀', cityCode: 'goheung'),
+    StampInfo(region: '보성', earned: true, emoji: '🍵', cityCode: 'boseong'),
+    StampInfo(region: '화순', earned: false, emoji: '🗿', cityCode: 'hwasun'),
+    StampInfo(region: '장흥', earned: false, emoji: '🌾', cityCode: 'jangheung'),
+    StampInfo(region: '강진', earned: false, emoji: '🏺', cityCode: 'gangjin'),
+    StampInfo(region: '해남', earned: false, emoji: '🧭', cityCode: 'haenam'),
+    StampInfo(region: '영암', earned: false, emoji: '🏔️', cityCode: 'yeongam'),
+    StampInfo(region: '무안', earned: false, emoji: '🧅', cityCode: 'muan'),
+    StampInfo(region: '함평', earned: false, emoji: '🦋', cityCode: 'hampyeong'),
+    StampInfo(region: '영광', earned: false, emoji: '🌅', cityCode: 'yeonggwang'),
+    StampInfo(region: '장성', earned: false, emoji: '🌲', cityCode: 'jangseong'),
+    StampInfo(region: '완도', earned: false, emoji: '🏝️', cityCode: 'wando'),
+    StampInfo(region: '진도', earned: false, emoji: '🐕', cityCode: 'jindo'),
+    StampInfo(region: '신안', earned: false, emoji: '💜', cityCode: 'sinan'),
   ];
 
   static const List<UnlockCourseInfo> unlockCourses = [
