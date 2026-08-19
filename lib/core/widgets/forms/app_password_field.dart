@@ -42,6 +42,11 @@ class _AppPasswordFieldState extends State<AppPasswordField> {
       enabled: widget.enabled,
       errorText: widget.errorText,
       obscureText: !_visible,
+      // 보기 토글로 가림을 풀면 일반 입력칸이 되어 자동완성·오타수정이 살아난다.
+      // 비밀번호가 IME 사전과 추천 목록에 남지 않도록 항상 꺼 둔다.
+      keyboardType: TextInputType.visiblePassword,
+      autocorrect: false,
+      enableSuggestions: false,
       suffixIcon: IconButton(
         icon: Icon(
           _visible ? Icons.visibility_off_rounded : Icons.visibility_rounded,

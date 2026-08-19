@@ -35,9 +35,19 @@ class AppTextLink extends StatelessWidget {
       ),
     };
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
+    // GestureDetector 는 포커스 순회에 들어가지 않아 키보드·스위치 컨트롤로는
+    // 누를 수 없고, 스크린리더도 버튼으로 읽지 않는다. TextButton 은 그 둘을
+    // 기본으로 주므로, 기본 여백·최소 크기만 걷어내 기존 모양을 유지한다.
+    return TextButton(
+      onPressed: onTap,
+      style: TextButton.styleFrom(
+        padding: EdgeInsets.zero,
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        visualDensity: VisualDensity.compact,
+        foregroundColor: style.color,
+        textStyle: style,
+      ),
       child: Text(label, style: style),
     );
   }

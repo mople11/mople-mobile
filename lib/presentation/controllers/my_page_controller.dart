@@ -47,6 +47,14 @@ class MyPageNotifier extends Notifier<MyPageState> {
   /// 목록별로 진행 중인 다음-페이지 요청. 같은 페이지를 두 번 이어 붙이지 않도록 막는다.
   final Set<String> _loadingMore = {};
 
+  /// 슬롯별 revision. 새로고침을 연달아 누르면 먼저 시작한 요청의 늦은 응답이
+  /// 나중 응답을 덮어쓸 수 있어, 요청 시작 시 값을 잡고 완료 시 확인한다.
+  final Map<String, int> _revisions = {};
+
+  int _bump(String slot) => _revisions[slot] = (_revisions[slot] ?? 0) + 1;
+
+  bool _isStale(String slot, int revision) => _revisions[slot] != revision;
+
   @override
   MyPageState build() => const MyPageState();
 
@@ -67,26 +75,34 @@ class MyPageNotifier extends Notifier<MyPageState> {
   // 반드시 결과를 지역 변수로 받은 뒤 최신 state 에 얹어야 한다.
 
   Future<void> loadSummary() async {
+    final revision = _bump('summary');
     state = state.copyWith(summary: const AsyncLoading());
     final result = await guardAsync(myPageRepository.fetchMe);
+    if (_isStale('summary', revision)) return;
     state = state.copyWith(summary: result);
   }
 
   Future<void> loadSavedCourses() async {
+    final revision = _bump('courses');
     state = state.copyWith(savedCourses: const AsyncLoading());
     final result = await guardAsync(() => myPageRepository.fetchSavedCourses());
+    if (_isStale('courses', revision)) return;
     state = state.copyWith(savedCourses: result);
   }
 
   Future<void> loadMyReviews() async {
+    final revision = _bump('reviews');
     state = state.copyWith(myReviews: const AsyncLoading());
     final result = await guardAsync(() => myPageRepository.fetchMyReviews());
+    if (_isStale('reviews', revision)) return;
     state = state.copyWith(myReviews: result);
   }
 
   Future<void> loadLikedPlaces() async {
+    final revision = _bump('likes');
     state = state.copyWith(likedPlaces: const AsyncLoading());
     final result = await guardAsync(() => myPageRepository.fetchLikedPlaces());
+    if (_isStale('likes', revision)) return;
     state = state.copyWith(likedPlaces: result);
   }
 
@@ -96,12 +112,15 @@ class MyPageNotifier extends Notifier<MyPageState> {
     if (current == null || !current.hasMore) return;
     if (!_loadingMore.add('courses')) return;
     try {
+      final revision = _revisions['courses'];
       final requestedPage = current.pagination.nextPage;
       final next = await guardAsync(
         () => myPageRepository.fetchSavedCourses(
           page: PageQuery(page: requestedPage),
         ),
       );
+      // 대기 중에 목록을 새로 불러왔으면 이어 붙이지 않는다.
+      if (_revisions['courses'] != revision) return;
       final value = next.value;
       if (value == null) return;
       // 대기 중에 목록이 새로고침됐으면(페이지가 되돌아갔으면) 이어 붙이지 않는다.
@@ -118,12 +137,14 @@ class MyPageNotifier extends Notifier<MyPageState> {
     if (current == null || !current.hasMore) return;
     if (!_loadingMore.add('likes')) return;
     try {
+      final revision = _revisions['likes'];
       final requestedPage = current.pagination.nextPage;
       final next = await guardAsync(
         () => myPageRepository.fetchLikedPlaces(
           page: PageQuery(page: requestedPage),
         ),
       );
+      if (_revisions['likes'] != revision) return;
       final value = next.value;
       if (value == null) return;
       final latest = state.likedPlaces?.value;

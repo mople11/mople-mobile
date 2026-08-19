@@ -241,7 +241,13 @@ class _AiTripPageState extends ConsumerState<AiTripPage> {
           width: double.infinity,
           size: AppButtonSize.lg,
           onPressed: () =>
-              context.push(CoursePage(courseId: result.courseId)),
+              context.push(CoursePage(
+                courseId: result.courseId,
+                preview: CoursePreview(
+                  name: result.name,
+                  placeCount: result.places.length,
+                ),
+              )),
         ),
         const SizedBox(height: AppSpacing.space3),
         AppButton(

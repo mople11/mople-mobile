@@ -46,30 +46,34 @@ class SettingsNotifier extends Notifier<SettingsState> {
   }
 
   Future<bool> setPush(bool value) => _patch(
-    SettingsUpdateRequest(
-      notifications: state.current.notifications.copyWith(push: value),
+    (current) => SettingsUpdateRequest(
+      notifications: current.notifications.copyWith(push: value),
     ),
   );
 
   Future<bool> setGoldenHour(bool value) => _patch(
-    SettingsUpdateRequest(
-      notifications: state.current.notifications.copyWith(goldenHour: value),
+    (current) => SettingsUpdateRequest(
+      notifications: current.notifications.copyWith(goldenHour: value),
     ),
   );
 
   Future<bool> setLocationPermission(bool value) => _patch(
-    SettingsUpdateRequest(
-      permissions: state.current.permissions.copyWith(location: value),
+    (current) => SettingsUpdateRequest(
+      permissions: current.permissions.copyWith(location: value),
     ),
   );
 
   Future<bool> setLanguage(AppLanguage value) =>
-      _patch(SettingsUpdateRequest(language: value));
+      _patch((_) => SettingsUpdateRequest(language: value));
 
   /// 낙관적 반영 후 실패 시 롤백.
-  Future<bool> _patch(SettingsUpdateRequest request) {
+  ///
+  /// 요청은 **큐가 실행될 때** 만든다. 미리 만들어 두면 앞선 요청이 바꾼 값을
+  /// 반영하지 못한다. 예를 들어 푸시를 켠 직후 골든아워를 켜면, 두 번째 요청이
+  /// 담고 있던 옛 `push: false` 가 서버와 화면의 푸시를 도로 꺼 버린다.
+  Future<bool> _patch(SettingsUpdateRequest Function(AppSettings current) build) {
     // 앞선 요청이 끝난 뒤에 실행되도록 큐에 잇는다.
-    final result = _pending.then((_) => _patchNow(request));
+    final result = _pending.then((_) => _patchNow(build(state.current)));
     _pending = result.then((_) {}, onError: (_) {});
     return result;
   }

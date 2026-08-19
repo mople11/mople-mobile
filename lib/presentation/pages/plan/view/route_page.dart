@@ -103,9 +103,9 @@ class _RoutePageState extends ConsumerState<RoutePage> {
               ),
             ),
             const SizedBox(height: AppSpacing.space5),
-            const MapPreviewCard(
+            MapPreviewCard(
               height: 160,
-              pins: 4,
+              pins: result.orderedPlaces.length,
               label: '전체 동선 지도',
             ),
             const SizedBox(height: AppSpacing.space5),

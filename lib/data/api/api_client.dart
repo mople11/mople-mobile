@@ -31,7 +31,9 @@ class ApiClient {
           if (token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';
           }
-          _log('→ ${options.method} ${options.uri}');
+          // 응답이 도착했을 때 세션이 그대로인지 판별할 근거를 실어 둔다.
+          options.extra[_authRevisionKey] = AuthTokenStore.revision;
+          _log('→ ${options.method} ${_safeUri(options.uri)}');
           if (options.data != null) {
             _log('  body: ${_redact(options.data, request: true)}');
           }
@@ -39,21 +41,28 @@ class ApiClient {
         },
         onResponse: (response, handler) {
           _log(
-            '← ${response.statusCode} ${response.requestOptions.uri}\n'
+            '← ${response.statusCode} ${_safeUri(response.requestOptions.uri)}\n'
             '  ${_redact(response.data)}',
           );
           handler.next(response);
         },
         onError: (e, handler) {
           _log(
-            '✖ ${e.type.name} ${e.requestOptions.uri}\n'
+            '✖ ${e.type.name} ${_safeUri(e.requestOptions.uri)}\n'
             '  status: ${e.response?.statusCode}\n'
             '  message: ${e.message}\n'
             '  body: ${_redact(e.response?.data)}',
           );
           // 저장된 토큰이 만료·폐기됐다는 뜻이므로 세션을 비운다.
           // 화면 전환은 앱 쪽에서 [onUnauthorized] 로 처리한다.
-          if (e.response?.statusCode == 401 && AuthTokenStore.hasSession) {
+          // 계정 A 로 보낸 요청이 계정 B 로그인 뒤에 401 로 돌아올 수 있다.
+          // 그때 세션을 지우면 멀쩡한 계정 B 가 로그아웃된다. 요청을 보낸 시점의
+          // revision 이 아직 현재 값일 때만 정리한다.
+          final requestRevision = e.requestOptions.extra[_authRevisionKey];
+          final sameSession = requestRevision == AuthTokenStore.revision;
+          if (e.response?.statusCode == 401 &&
+              AuthTokenStore.hasSession &&
+              sameSession) {
             _log('401 — 저장된 세션을 정리한다.');
             // 인터셉터는 동기라 기다릴 수 없다. 실패해도 이후 복원은
             // AuthTokenStore 가 차단하므로 로그만 남기고 넘어간다.
@@ -63,6 +72,8 @@ class ApiClient {
               ),
             );
             onUnauthorized?.call();
+          } else if (e.response?.statusCode == 401 && !sameSession) {
+            _log('401 — 다른 세션의 응답이라 무시한다.');
           }
           handler.next(e);
         },
@@ -71,6 +82,9 @@ class ApiClient {
   }
 
   final Dio _dio;
+
+  /// 요청을 보낸 시점의 [AuthTokenStore.revision] 을 담는 `extra` 키.
+  static const _authRevisionKey = 'authRevision';
 
   /// 401 로 세션이 무효해졌을 때 앱이 로그인 화면으로 보낼 수 있게 두는 훅.
   static void Function()? onUnauthorized;
@@ -100,6 +114,10 @@ class ApiClient {
   /// (`WEATHER_FETCH_FAILED` 등)다. 응답까지 가리면 로그로 원인을 못 찾는다.
   static const _requestOnlySecretKeys = <String>{'code', 'verifyCode'};
 
+  /// 사람을 특정하는 값. 통째로 가리면 어느 계정 흐름인지 못 따라가므로
+  /// 앞 두 글자와 도메인만 남기고 가린다(`ch***@gmail.com`).
+  static const _personalKeys = <String>{'email', 'phone', 'phoneNumber'};
+
   /// 민감한 값을 `***` 로 바꾼 사본을 돌려준다. 중첩된 Map/List 도 따라 들어간다.
   ///
   /// [request] 가 true 면 [_requestOnlySecretKeys] 까지 함께 가린다.
@@ -107,17 +125,46 @@ class ApiClient {
     if (value is Map) {
       return {
         for (final entry in value.entries)
-          entry.key:
-              _secretKeys.contains('${entry.key}') ||
-                  (request && _requestOnlySecretKeys.contains('${entry.key}'))
-              ? '***'
-              : _redact(entry.value, request: request),
+          entry.key: switch (entry) {
+            _
+                when _secretKeys.contains('${entry.key}') ||
+                    (request &&
+                        _requestOnlySecretKeys.contains('${entry.key}')) =>
+              '***',
+            _ when _personalKeys.contains('${entry.key}') => _mask(
+              entry.value,
+            ),
+            _ => _redact(entry.value, request: request),
+          },
       };
     }
     if (value is List) {
       return value.map((e) => _redact(e, request: request)).toList();
     }
     return value;
+  }
+
+  /// 앞 두 글자만 남기고 가린다. 이메일은 도메인을 남겨 어느 흐름인지 알아본다.
+  static Object? _mask(Object? value) {
+    if (value is! String || value.isEmpty) return value;
+    final at = value.indexOf('@');
+    if (at > 0) {
+      final head = value.substring(0, at);
+      final domain = value.substring(at);
+      final keep = head.length <= 2 ? head : head.substring(0, 2);
+      return '$keep***$domain';
+    }
+    return value.length <= 2 ? '***' : '${value.substring(0, 2)}***';
+  }
+
+  /// 로그에 남길 URI. 쿼리 **값**은 가린다.
+  ///
+  /// 검색어와 위도·경도가 그대로 찍히면 사용자의 관심사와 위치가 로그에 남는다.
+  /// 어떤 파라미터를 보냈는지는 디버깅에 필요하므로 키는 남긴다.
+  static String _safeUri(Uri uri) {
+    if (uri.queryParameters.isEmpty) return uri.path;
+    final keys = uri.queryParameters.keys.map((k) => '$k=***').join('&');
+    return '${uri.path}?$keys';
   }
 
   static String get _defaultBaseUrl => ApiEndpoints.baseUrl;

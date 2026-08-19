@@ -6,6 +6,15 @@ import 'package:mople_mobile/data/api/kakao_auth.dart';
 import 'package:mople_mobile/data/models/models.dart';
 import 'package:mople_mobile/data/repositories/repositories.dart';
 import 'package:mople_mobile/presentation/controllers/base/async_result.dart';
+import 'package:mople_mobile/presentation/controllers/completion_card_controller.dart';
+import 'package:mople_mobile/presentation/controllers/course_controller.dart';
+import 'package:mople_mobile/presentation/controllers/favorites_controller.dart';
+import 'package:mople_mobile/presentation/controllers/home_controller.dart';
+import 'package:mople_mobile/presentation/controllers/my_page_controller.dart';
+import 'package:mople_mobile/presentation/controllers/settings_controller.dart';
+import 'package:mople_mobile/presentation/controllers/stamp_controller.dart';
+import 'package:mople_mobile/presentation/controllers/unlock_controller.dart';
+import 'package:mople_mobile/presentation/controllers/user_controller.dart';
 
 /// Auth 범위(`/auth/**`) 상태.
 ///
@@ -98,11 +107,20 @@ class AuthNotifier extends Notifier<AuthState> {
   /// 서버에 다시 물어보지 않고 저장된 토큰을 그대로 신뢰한다. 만료됐다면 이후
   /// 첫 인증 요청이 401 로 떨어지므로 그때 [clearSession] 으로 정리하면 된다.
   Future<bool> restoreSession() async {
+    final generation = _sessionGeneration;
     final session = await AuthTokenStore.restore();
+    if (generation != _sessionGeneration) return false;
     if (session == null) return false;
     state = state.copyWith(session: AsyncData(session));
     return true;
   }
+
+  /// 세션 세대. [clearSession] 이 올린다.
+  ///
+  /// 로그아웃 직전에 시작한 로그인·회원가입·복원 요청이 로그아웃 뒤에 완료되면
+  /// 지운 세션이 다시 저장된다. 요청 시작 시 세대를 잡아 두고 저장 직전에
+  /// 확인해, 로그아웃을 건너뛴 응답은 버린다.
+  int _sessionGeneration = 0;
 
   /// 로그인·회원가입 성공 응답을 세션으로 확정하고 기기에 저장한다.
   Future<void> _persist(AuthSession session) => AuthTokenStore.save(session);
@@ -163,8 +181,10 @@ class AuthNotifier extends Notifier<AuthState> {
 
   // ── 회원가입 ──────────────────────────────────────────────
   Future<void> submitSignup(SignupRequest request) async {
+    final generation = _sessionGeneration;
     state = state.copyWith(signup: const AsyncLoading());
     final result = await guardAsync(() => authRepository.signup(request));
+    if (generation != _sessionGeneration) return;
     final signup = result.value;
     if (signup != null) {
       // 회원가입 응답에는 accessToken 만 있고 refreshToken·user 가 없다.
@@ -185,8 +205,10 @@ class AuthNotifier extends Notifier<AuthState> {
   // ── 로그인 ────────────────────────────────────────────────
   Future<void> login({required String id, required String pw}) async {
     final request = LoginRequest(id: id.trim(), pw: pw);
+    final generation = _sessionGeneration;
     state = state.copyWith(session: const AsyncLoading());
     final result = await guardAsync(() => authRepository.login(request));
+    if (generation != _sessionGeneration) return;
     final session = result.value;
     // 이후 요청이 토큰 없이 나가지 않도록 상태보다 저장을 먼저 끝낸다.
     if (session != null) await _persist(session);
@@ -201,10 +223,12 @@ class AuthNotifier extends Notifier<AuthState> {
       provider: provider,
       oauthToken: oauthToken,
     );
+    final generation = _sessionGeneration;
     state = state.copyWith(session: const AsyncLoading());
     final result = await guardAsync(
       () => authRepository.loginWithSocial(request),
     );
+    if (generation != _sessionGeneration) return;
     final session = result.value;
     if (session != null) await _persist(session);
     state = state.copyWith(session: result);
@@ -275,6 +299,8 @@ class AuthNotifier extends Notifier<AuthState> {
   /// 카카오 세션 정리는 네트워크 호출이라 기다리지 않는다. Keychain 삭제만
   /// 확실히 끝낸 뒤 상태를 비워야 다음 요청에 옛 토큰이 실리지 않는다.
   Future<void> clearSession() async {
+    // 진행 중인 로그인·복원 응답이 지운 세션을 되살리지 못하게 세대를 올린다.
+    _sessionGeneration++;
     unawaited(KakaoAuth.logout());
     // 저장소 삭제가 실패해도 화면 상태는 반드시 로그아웃으로 만든다.
     // (AuthTokenStore 가 이후 복원을 차단하므로 세션이 되살아나지는 않는다.)
@@ -285,7 +311,26 @@ class AuthNotifier extends Notifier<AuthState> {
     }
     // 찜 상태 캐시는 계정에 종속되므로 함께 비운다.
     placeRepository.clearLikedCache();
+    _invalidateAccountScopedState();
     state = const AuthState();
+  }
+
+  /// 계정에 종속된 provider 를 한꺼번에 버린다.
+  ///
+  /// 이들은 autoDispose 가 아니라 로그아웃 후에도 이전 계정의 값을 그대로 들고
+  /// 있다. 다음 계정으로 로그인하면 서버 응답이 오기 전(또는 요청이 실패하면
+  /// 계속) 이전 계정의 설정·저장 코스·도장이 화면에 보인다.
+  void _invalidateAccountScopedState() {
+    ref
+      ..invalidate(myPageProvider)
+      ..invalidate(settingsProvider)
+      ..invalidate(courseProvider)
+      ..invalidate(stampProvider)
+      ..invalidate(unlockProvider)
+      ..invalidate(favoritesProvider)
+      ..invalidate(completionCardProvider)
+      ..invalidate(userProvider)
+      ..invalidate(homeProvider);
   }
 }
 

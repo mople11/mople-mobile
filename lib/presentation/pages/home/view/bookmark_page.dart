@@ -84,7 +84,10 @@ class _BookmarkPageState extends ConsumerState<BookmarkPage> {
                       icon: Icons.route_rounded,
                       title: course.name,
                       onTap: () =>
-                          context.push(CoursePage(courseId: course.courseId)),
+                          context.push(CoursePage(
+                            courseId: course.courseId,
+                            preview: CoursePreview(name: course.name),
+                          )),
                     ),
                     const SizedBox(height: AppSpacing.space3),
                   ],

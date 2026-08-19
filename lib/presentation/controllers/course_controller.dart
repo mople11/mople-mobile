@@ -122,6 +122,9 @@ class CourseNotifier extends Notifier<CourseState> {
   void setFreeText(String? value) => state = state.copyWith(freeText: value);
 
   void setCourseId(String? value) {
+    // 다른 코스로 바뀌면 이전 코스의 저장·시작·공유 응답이 새 코스 상태를
+    // 건드리지 못하게 세대를 올린다.
+    if (value != state.courseId) _generation++;
     state = state.copyWith(
       courseId: value,
       clearCourseId: value == null,

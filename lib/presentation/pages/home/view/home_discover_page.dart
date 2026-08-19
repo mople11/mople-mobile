@@ -67,7 +67,10 @@ class _HomeDiscoverPageState extends ConsumerState<HomeDiscoverPage> {
                       duration: course.duration,
                       image: course.thumbnail,
                       onTap: () =>
-                          context.push(CoursePage(courseId: course.courseId)),
+                          context.push(CoursePage(
+                            courseId: course.courseId,
+                            preview: CoursePreview.fromSummary(course),
+                          )),
                     ),
                     const SizedBox(height: AppSpacing.space4),
                   ],

@@ -41,6 +41,13 @@ abstract final class AuthTokenStore {
   /// 이번 프로세스에서 삭제가 실패한 적이 있으면 true.
   static bool _deleteFailed = false;
 
+  /// 세션이 바뀔 때마다 오른다. 요청을 보낸 시점의 세션과 응답이 도착한 시점의
+  /// 세션이 같은지 판별하는 데 쓴다(계정 A 의 응답이 계정 B 세션을 건드리지
+  /// 못하게 한다).
+  static int _revision = 0;
+
+  static int get revision => _revision;
+
   /// 인터셉터가 헤더에 실을 액세스 토큰.
   static String? get accessToken => _session?.accessToken;
 
@@ -55,18 +62,24 @@ abstract final class AuthTokenStore {
   static Future<void> save(AuthSession session) async {
     _session = session;
     _deleteFailed = false;
+    _revision++;
+    var persisted = false;
     try {
       await _storage.write(
         key: _sessionKey,
         value: jsonEncode(session.toJson()),
       );
+      persisted = true;
     } catch (e) {
       // 저장에 실패해도 이번 세션은 메모리로 계속 쓸 수 있으므로 앱을 멈추지 않는다.
       debugPrint('[Auth] 세션 저장 실패: $e');
     }
-    // 새로 로그인했으므로 이전 로그아웃 표시는 더 이상 유효하지 않다.
-    // 표시가 남아 있으면 이 세션까지 복원이 막히므로 반드시 거둔다.
-    await _removeLogoutMarker();
+    // 새 세션을 실제로 기록했을 때만 이전 로그아웃 표시를 거둔다.
+    //
+    // 쓰기가 실패했는데 표시까지 지우면, 저장소에 남아 있는 **이전 계정의**
+    // 세션이 다음 실행에서 복원된다. 표시를 남겨 두면 그 복원이 막히고,
+    // 이번 실행은 메모리 세션으로 정상 동작한다.
+    if (persisted) await _removeLogoutMarker();
   }
 
   /// 앱 시작 시 1회 호출해 저장된 세션을 메모리로 올린다.
@@ -122,6 +135,7 @@ abstract final class AuthTokenStore {
   /// [restore] 는 그 세션을 되살리지 않는다.
   static Future<void> clear() async {
     _session = null;
+    _revision++;
     // 삭제보다 먼저 표시를 남긴다. 삭제가 실패한 채 앱이 종료돼도 다음 실행에서
     // 복원을 막을 근거는 이 표시뿐이다.
     final marked = await _writeLogoutMarker();

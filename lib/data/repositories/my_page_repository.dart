@@ -1,5 +1,6 @@
 import 'package:mople_mobile/data/api/api_client.dart';
 import 'package:mople_mobile/data/api/api_endpoints.dart';
+import 'package:mople_mobile/data/api/auth_token_store.dart';
 import 'package:mople_mobile/data/models/models.dart';
 import 'package:mople_mobile/data/repositories/place_repository.dart';
 
@@ -36,6 +37,7 @@ class MyPageRepository {
   Future<Paged<LikedPlace>> fetchLikedPlaces({
     PageQuery page = PageQuery.first,
   }) async {
+    final revision = AuthTokenStore.revision;
     final result = await apiClient.requestPaged(
       'GET',
       ApiEndpoints.myLikes,
@@ -43,11 +45,15 @@ class MyPageRepository {
       listKey: 'places',
       parse: LikedPlace.fromJson,
     );
-    // 첫 페이지만 캐시를 교체하고, 이후 페이지는 더한다.
-    placeRepository.syncLikedPlaceIds(
-      result.items.map((e) => e.placeId),
-      replace: result.pagination.page <= 1,
-    );
+    // 대기 중에 계정이 바뀌었으면(로그아웃·재로그인) 이전 계정의 찜을
+    // 새 계정 캐시에 섞지 않는다.
+    if (revision == AuthTokenStore.revision) {
+      // 첫 페이지만 캐시를 교체하고, 이후 페이지는 더한다.
+      placeRepository.syncLikedPlaceIds(
+        result.items.map((e) => e.placeId),
+        replace: result.pagination.page <= 1,
+      );
+    }
     return result;
   }
 
