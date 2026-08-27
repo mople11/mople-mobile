@@ -96,6 +96,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   /// 스토어 정책상 계정을 만들 수 있는 앱은 앱 안에서 계정 삭제도 제공해야
   /// 한다. 서버 탈퇴 API 는 아직 백엔드 스펙 확정 전이라, 지금은 확인 후
   /// 로컬 세션만 정리하고 로그인 화면으로 되돌린다.
+  // 진입점은 감췄지만 서버 탈퇴 API 가 확정되면 그대로 되살릴 코드라 지우지 않는다.
+  // ignore: unused_element
   void _confirmDeleteAccount() {
     AppDialog.show<void>(
       context,
@@ -333,16 +335,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             ),
             onPressed: _confirmLogout,
           ),
-          const SizedBox(height: AppSpacing.space3),
-          // 계정 삭제 진입점. 스토어(구글 플레이 계정 삭제 요건) 심사 대응을
-          // 위해 로그아웃과 나란히, 눈에 띄는 위치에 둔다.
-          Center(
-            child: AppTextLink(
-              label: '회원탈퇴',
-              tone: AppTextLinkTone.plain,
-              onTap: _confirmDeleteAccount,
-            ),
-          ),
+          // 회원탈퇴 진입점은 서버 탈퇴 API 가 생길 때까지 노출하지 않는다.
+          //
+          // 스토어(구글 플레이 계정 삭제 요건)를 위해 넣어 뒀지만, 실제로는
+          // 로컬 세션만 지우면서 "모든 데이터가 삭제된다" 고 안내하고 있었다.
+          // 지키지 못할 약속을 화면에 띄우는 쪽이 진입점이 없는 것보다 나쁘다.
+          // TODO(backend): DELETE /users/me 가 확정되면 _deleteAccount 에서
+          // 호출하고 이 진입점을 다시 노출한다.
         ],
       ),
     );
