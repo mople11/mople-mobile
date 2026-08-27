@@ -33,6 +33,9 @@ class AppDialog extends StatelessWidget {
 
   /// 로그아웃 확인 다이얼로그 — MY/설정 화면에서 공통으로 쓰는 "취소 · 로그아웃" 패턴.
   /// 실제 로그아웃 이동 로직은 [onConfirm]으로 호출부에서 결정합니다.
+  ///
+  /// [onConfirm]이 서버 호출 등으로 오래 걸릴 수 있으므로 **다이얼로그를 먼저 닫고**
+  /// 실행합니다. 그렇지 않으면 응답을 기다리는 동안 다이얼로그가 떠 있습니다.
   static Future<void> confirmLogout(
     BuildContext context, {
     required VoidCallback onConfirm,
@@ -41,14 +44,21 @@ class AppDialog extends StatelessWidget {
       context,
       title: '로그아웃 하시겠어요?',
       actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('취소'),
+        Builder(
+          builder: (dialogContext) => TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('취소'),
+          ),
         ),
-        FilledButton(
-          style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
-          onPressed: onConfirm,
-          child: const Text('로그아웃'),
+        Builder(
+          builder: (dialogContext) => FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              onConfirm();
+            },
+            child: const Text('로그아웃'),
+          ),
         ),
       ],
     );

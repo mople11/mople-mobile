@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mople_mobile/data/mock/mock_api.dart';
 import 'package:mople_mobile/data/models/models.dart';
+import 'package:mople_mobile/data/repositories/repositories.dart';
 import 'package:mople_mobile/presentation/controllers/base/async_result.dart';
 
 /// 실시간 교통 혼잡 안내(`GET /traffic/congestion`) 상태.
@@ -36,10 +36,14 @@ class TrafficState {
 }
 
 class TrafficNotifier extends Notifier<TrafficState> {
+  /// 경로가 바뀔 때마다 증가. 이전 경로의 응답이 반영되지 않게 한다.
+  int _generation = 0;
+
   @override
   TrafficState build() => const TrafficState();
 
   void setRoute({required GeoPoint from, required GeoPoint to}) {
+    _generation++;
     state = state.copyWith(origin: from, destination: to);
   }
 
@@ -49,10 +53,11 @@ class TrafficNotifier extends Notifier<TrafficState> {
       origin: state.origin!,
       destination: state.destination!,
     );
+    final generation = _generation;
     state = state.copyWith(traffic: const AsyncLoading());
-    state = state.copyWith(
-      traffic: await guardAsync(() => mockApi.fetchTraffic(query)),
-    );
+    final result = await guardAsync(() => placeRepository.fetchTraffic(query));
+    if (generation != _generation) return;
+    state = state.copyWith(traffic: result);
   }
 }
 

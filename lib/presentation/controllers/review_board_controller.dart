@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mople_mobile/data/mock/mock_api.dart';
 import 'package:mople_mobile/data/models/models.dart';
+import 'package:mople_mobile/data/repositories/repositories.dart';
 import 'package:mople_mobile/presentation/controllers/base/async_result.dart';
 
 /// 후기·만족도 범위(`/reviews/**`) 상태.
@@ -27,7 +27,7 @@ class ReviewBoardState {
   final String targetId;
 
   final ReviewSort sort;
-  final AsyncValue<List<Review>>? reviews;
+  final AsyncValue<Paged<Review>>? reviews;
   final AsyncValue<ReviewSummary>? summary;
 
   // ── 작성 폼 ───────────────────────────────────────────────
@@ -63,7 +63,7 @@ class ReviewBoardState {
 
   ReviewBoardState copyWith({
     ReviewSort? sort,
-    AsyncValue<List<Review>>? reviews,
+    AsyncValue<Paged<Review>>? reviews,
     AsyncValue<ReviewSummary>? summary,
     double? draftRating,
     String? draftText,
@@ -94,6 +94,13 @@ class ReviewBoardNotifier extends Notifier<ReviewBoardState> {
 
   final String targetId;
 
+  /// 목록 revision. 정렬을 바꾸거나 목록을 다시 불러올 때 증가한다.
+  /// 이전 정렬의 응답이 새 정렬 결과를 덮어쓰거나 이어 붙지 않도록 막는다.
+  int _revision = 0;
+
+  /// 다음 페이지 요청이 진행 중인지. 같은 페이지 중복 append 를 막는다.
+  bool _loadingMore = false;
+
   @override
   ReviewBoardState build() {
     Future.microtask(load);
@@ -106,23 +113,53 @@ class ReviewBoardNotifier extends Notifier<ReviewBoardState> {
 
   Future<void> loadReviews() async {
     final query = ReviewListQuery(targetId: targetId, sort: state.sort);
+    final revision = ++_revision;
     state = state.copyWith(reviews: const AsyncLoading());
-    state = state.copyWith(
-      reviews: await guardAsync(() => mockApi.fetchReviews(query)),
-    );
+    final result = await guardAsync(() => reviewRepository.fetchReviews(query));
+    if (revision != _revision) return;
+    state = state.copyWith(reviews: result);
   }
 
   Future<void> loadSummary() async {
     state = state.copyWith(summary: const AsyncLoading());
-    state = state.copyWith(
-      summary: await guardAsync(() => mockApi.fetchReviewSummary(targetId)),
+    final result = await guardAsync(
+      () => reviewRepository.fetchReviewSummary(targetId),
     );
+    state = state.copyWith(summary: result);
   }
 
   Future<void> changeSort(ReviewSort value) async {
     if (state.sort == value) return;
     state = state.copyWith(sort: value);
     await loadReviews();
+  }
+
+  /// 다음 페이지를 이어 붙인다(무한 스크롤). 더 없으면 아무 것도 하지 않는다.
+  Future<void> loadMoreReviews() async {
+    final current = state.reviews?.value;
+    if (current == null || !current.hasMore) return;
+    if (_loadingMore) return;
+    _loadingMore = true;
+    try {
+      final revision = _revision;
+      final requestedPage = current.pagination.nextPage;
+      final query = ReviewListQuery(targetId: targetId, sort: state.sort);
+      final next = await guardAsync(
+        () => reviewRepository.fetchReviews(
+          query,
+          page: PageQuery(page: requestedPage),
+        ),
+      );
+      // 정렬이 바뀌었거나 목록이 새로 로드됐으면 이어 붙이지 않는다.
+      if (revision != _revision) return;
+      final value = next.value;
+      if (value == null) return;
+      final latest = state.reviews?.value;
+      if (latest == null || latest.pagination.nextPage != requestedPage) return;
+      state = state.copyWith(reviews: AsyncData(latest.append(value)));
+    } finally {
+      _loadingMore = false;
+    }
   }
 
   // ── 작성 ─────────────────────────────────────────────────
@@ -173,20 +210,30 @@ class ReviewBoardNotifier extends Notifier<ReviewBoardState> {
     );
   }
 
-  /// `RATING_REQUIRED` 를 먼저 검증한 뒤 등록한다.
+  /// 서버로 보내기 전에 필수값을 검증한다.
+  ///
+  /// 별점과 본문은 실패 사유가 다르므로 각각 다른 메시지를 돌려준다.
+  /// 하나로 뭉뚱그리면 이미 채운 별점을 다시 만지게 만든다.
   Future<ReviewCreateResult?> submit() async {
     final request = state.draft;
-    if (!request.isValid) {
+    final ApiError? invalid = switch (request) {
+      _ when request.rating <= 0 => ApiError.local(ApiErrorCode.ratingRequired),
+      _ when !request.hasText => ApiError.local(
+        ApiErrorCode.validation,
+        '후기 내용을 입력해주세요.',
+      ),
+      _ => null,
+    };
+    if (invalid != null) {
       state = state.copyWith(
-        submitState: AsyncError(
-          ApiError.local(ApiErrorCode.ratingRequired),
-          StackTrace.current,
-        ),
+        submitState: AsyncError(invalid, StackTrace.current),
       );
       return null;
     }
     state = state.copyWith(submitState: const AsyncLoading());
-    final result = await guardAsync(() => mockApi.createReview(request));
+    final result = await guardAsync(
+      () => reviewRepository.createReview(request),
+    );
     state = state.copyWith(submitState: result);
     if (result.value != null) {
       clearDraft();
@@ -211,7 +258,7 @@ class ReviewBoardNotifier extends Notifier<ReviewBoardState> {
   Future<void> markHelpful(String reviewId) async {
     state = state.copyWith(helpfulAction: const AsyncLoading());
     final result = await guardAsync(() async {
-      final count = await mockApi.markReviewHelpful(reviewId);
+      final count = await reviewRepository.markReviewHelpful(reviewId);
       state = state.copyWith(
         helpfulCounts: {...state.helpfulCounts, reviewId: count},
       );
@@ -223,7 +270,7 @@ class ReviewBoardNotifier extends Notifier<ReviewBoardState> {
     final request = ReviewReportRequest(reason: reason);
     state = state.copyWith(reportAction: const AsyncLoading());
     final result = await guardAsync(
-      () => mockApi.reportReview(reviewId, request),
+      () => reviewRepository.reportReview(reviewId, request),
     );
     state = state.copyWith(reportAction: result);
     return !result.hasError;

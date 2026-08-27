@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mople_mobile/data/mock/mock_api.dart';
 import 'package:mople_mobile/data/models/models.dart';
+import 'package:mople_mobile/data/repositories/repositories.dart';
 import 'package:mople_mobile/presentation/controllers/base/async_result.dart';
 
 /// 장소 상세 화면 상태.
@@ -54,7 +54,10 @@ class PlaceDetailNotifier extends Notifier<PlaceDetailState> {
   @override
   PlaceDetailState build() {
     Future.microtask(load);
-    return PlaceDetailState(placeId: placeId, liked: mockApi.isLiked(placeId));
+    return PlaceDetailState(
+      placeId: placeId,
+      liked: placeRepository.isLiked(placeId),
+    );
   }
 
   Future<void> load() async {
@@ -63,23 +66,23 @@ class PlaceDetailNotifier extends Notifier<PlaceDetailState> {
 
   Future<void> loadDetail() async {
     state = state.copyWith(detail: const AsyncLoading());
-    state = state.copyWith(
-      detail: await guardAsync(() => mockApi.fetchPlace(placeId)),
-    );
+    final result = await guardAsync(() => placeRepository.fetchPlace(placeId));
+    state = state.copyWith(detail: result);
   }
 
   Future<void> loadCongestion() async {
     state = state.copyWith(congestion: const AsyncLoading());
-    state = state.copyWith(
-      congestion: await guardAsync(() => mockApi.fetchPlaceCongestion(placeId)),
+    final result = await guardAsync(
+      () => placeRepository.fetchPlaceCongestion(placeId),
     );
+    state = state.copyWith(congestion: result);
   }
 
   /// 서버 응답을 기다리는 동안 먼저 UI 를 뒤집고, 실패하면 되돌린다.
   Future<void> toggleLike() async {
     final previous = state.liked;
     state = state.copyWith(liked: !previous, likeAction: const AsyncLoading());
-    final result = await guardAsync(() => mockApi.toggleLike(placeId));
+    final result = await guardAsync(() => placeRepository.toggleLike(placeId));
     state = state.copyWith(
       likeAction: result,
       liked: result.hasError ? previous : (result.value ?? previous),

@@ -59,12 +59,18 @@ class HomeData {
   );
 }
 
-/// `GET /home`, `GET /weather/current` 의 쿼리 파라미터.
+/// `GET /home`, `GET /weather/current`, `GET /courses/unlocked` 의 쿼리 파라미터.
+///
+/// 세 엔드포인트 모두 `lat`/`lng` 를 **필수**로 요구한다(빠지면 `COMMON_422`).
+/// 위치 권한을 아직 못 받았을 때는 [fallback] 을 보낸다.
 class LocationQuery {
   const LocationQuery({required this.lat, required this.lng});
 
   final double lat;
   final double lng;
+
+  /// 위치를 아직 모를 때 쓰는 기본 좌표 — 전남도청(무안).
+  static const fallback = LocationQuery(lat: 34.8161, lng: 126.4630);
 
   Map<String, dynamic> toJson() => {'lat': lat, 'lng': lng};
 }

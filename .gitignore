@@ -43,3 +43,6 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# 카카오 네이티브 앱 키(로컬 전용)
+ios/Flutter/Kakao.xcconfig

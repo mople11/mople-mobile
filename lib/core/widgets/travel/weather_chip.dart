@@ -7,6 +7,15 @@ import '../../constants/spacing.dart';
 
 enum WeatherCondition { sunny, rain, cloud, wind }
 
+/// 서버가 내려주는 한글 날씨 문자열(`weatherType`)을 [WeatherCondition] 으로 매핑한다.
+/// 알 수 없는 값은 구름으로 처리한다(구름조금·흐림·눈 등).
+WeatherCondition weatherConditionFromKorean(String label) {
+  if (label.contains('맑')) return WeatherCondition.sunny;
+  if (label.contains('비') || label.contains('우')) return WeatherCondition.rain;
+  if (label.contains('바람')) return WeatherCondition.wind;
+  return WeatherCondition.cloud;
+}
+
 /// 조건별 아이콘/라벨 — WeatherChip과 WeatherCard가 함께 사용하는 단일 소스.
 extension WeatherConditionX on WeatherCondition {
   IconData get icon => switch (this) {
