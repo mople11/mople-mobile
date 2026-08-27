@@ -217,6 +217,7 @@ class _ReviewPageState extends ConsumerState<ReviewPage> {
                   review: review,
                   helpfulCount: state.helpfulCountOf(review.reviewId),
                   onHelpful: () => _notifier.markHelpful(review.reviewId),
+                  onReport: (reason) => _reportReview(review.reviewId, reason),
                 ),
                 const SizedBox(height: AppSpacing.space3),
               ],
@@ -235,6 +236,9 @@ class _ReviewPageState extends ConsumerState<ReviewPage> {
       ],
     );
   }
+
+  Future<bool> _reportReview(String reviewId, String reason) =>
+      _notifier.report(reviewId, reason);
 }
 
 /// 서버 [Review] 를 그리는 카드. 목업 전용인 `ReviewCard` 와 모델이 달라 따로 둔다.
@@ -243,11 +247,13 @@ class _ReviewTile extends StatelessWidget {
     required this.review,
     required this.helpfulCount,
     required this.onHelpful,
+    required this.onReport,
   });
 
   final Review review;
   final int helpfulCount;
   final VoidCallback onHelpful;
+  final Future<bool> Function(String reason) onReport;
 
   @override
   Widget build(BuildContext context) {
@@ -271,6 +277,31 @@ class _ReviewTile extends StatelessWidget {
                     fontWeight: AppFont.bold,
                   ),
                 ),
+              ),
+              PopupMenuButton<String>(
+                tooltip: '후기 신고',
+                icon: const Icon(
+                  Icons.more_horiz_rounded,
+                  size: 20,
+                  color: AppColors.textTertiary,
+                ),
+                onSelected: (reason) async {
+                  final reported = await onReport(reason);
+                  if (!context.mounted) return;
+                  AppToast.show(
+                    context,
+                    title: reported ? '신고 접수' : '신고 실패',
+                    message: reported
+                        ? '검토 후 필요한 조치를 취할게요.'
+                        : '후기를 신고하지 못했어요. 잠시 후 다시 시도해주세요.',
+                    tone: reported ? AppToastTone.success : AppToastTone.danger,
+                  );
+                },
+                itemBuilder: (context) => const [
+                  PopupMenuItem(value: '욕설·혐오 표현', child: Text('욕설·혐오 표현')),
+                  PopupMenuItem(value: '스팸 또는 광고', child: Text('스팸 또는 광고')),
+                  PopupMenuItem(value: '허위 또는 부적절한 내용', child: Text('허위 또는 부적절한 내용')),
+                ],
               ),
               AppRating(value: review.rating, starSize: 14),
             ],

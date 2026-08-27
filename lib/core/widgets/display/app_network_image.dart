@@ -17,10 +17,21 @@ class AppNetworkImage extends StatelessWidget {
   Widget build(BuildContext context) {
     if (url.trim().isEmpty) return const _Placeholder();
     return Image.network(
-      url,
+      _secureUrl,
       fit: fit,
       errorBuilder: (_, _, _) => const _Placeholder(),
     );
+  }
+
+  /// Android 9 이상은 일반 HTTP 통신을 기본 차단한다. 관광공사처럼 HTTPS도
+  /// 제공하는 서버의 오래된 HTTP 썸네일은 앱에서 HTTPS로 올려 이미지가 깨지는
+  /// 일을 막는다. HTTPS가 아닌 스킴은 원본을 유지해 errorBuilder가 처리한다.
+  String get _secureUrl {
+    final uri = Uri.tryParse(url.trim());
+    if (uri != null && uri.scheme == 'http') {
+      return uri.replace(scheme: 'https').toString();
+    }
+    return url.trim();
   }
 }
 

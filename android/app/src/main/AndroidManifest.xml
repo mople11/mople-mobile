@@ -3,7 +3,7 @@
          모든 네트워크 요청이 막힌다. -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <application
-        android:label="mople_mobile"
+        android:label="어디가남"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

@@ -8,6 +8,7 @@ import 'package:mople_mobile/core/widgets/widgets.dart';
 import 'package:mople_mobile/data/models/models.dart';
 import 'package:mople_mobile/presentation/controllers/auth_controller.dart';
 import 'package:mople_mobile/presentation/controllers/base/async_result.dart';
+import 'package:mople_mobile/presentation/pages/policy/view/policy_page.dart';
 
 class SignupPage extends ConsumerStatefulWidget {
   const SignupPage({super.key});
@@ -379,10 +380,36 @@ class _SignupPageState extends ConsumerState<SignupPage> {
             controller: _pwCheckController,
           ),
           const SizedBox(height: AppSpacing.space5),
-          AppCheckbox(
-            label: '이용약관 및 개인정보처리방침에 동의합니다',
-            value: _agree,
-            onChanged: (v) => setState(() => _agree = v),
+          // 동의 대상 문서를 실제로 열람할 수 있어야 한다(스토어 심사 요건).
+          // 문서명은 링크로 두고, 나머지 문구·체크박스로 동의를 받는다.
+          Row(
+            children: [
+              AppCheckbox(
+                label: '',
+                value: _agree,
+                onChanged: (v) => setState(() => _agree = v),
+              ),
+              Expanded(
+                child: Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    AppTextLink(
+                      label: '이용약관',
+                      onTap: () => context.push(const PolicyPage.terms()),
+                    ),
+                    Text(' 및 ', style: AppTextStyle.body),
+                    AppTextLink(
+                      label: '개인정보처리방침',
+                      onTap: () => context.push(const PolicyPage.privacy()),
+                    ),
+                    GestureDetector(
+                      onTap: () => setState(() => _agree = !_agree),
+                      child: Text('에 동의합니다', style: AppTextStyle.body),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: AppSpacing.space5),
           AppButton(

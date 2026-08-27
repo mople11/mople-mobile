@@ -12,6 +12,7 @@ import 'package:mople_mobile/presentation/controllers/main_tab_controller.dart';
 import 'package:mople_mobile/presentation/controllers/settings_controller.dart';
 import 'package:mople_mobile/presentation/pages/auth/view/login_page.dart';
 import 'package:mople_mobile/presentation/pages/my/view/profile_edit_page.dart';
+import 'package:mople_mobile/presentation/pages/policy/view/policy_page.dart';
 
 /// 앱 설정 — `GET /settings`, `PATCH /settings`.
 ///
@@ -88,6 +89,47 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         context.pushAndRemoveAll(const LoginPage());
       },
     );
+  }
+
+  /// 회원탈퇴 확인 다이얼로그.
+  ///
+  /// 스토어 정책상 계정을 만들 수 있는 앱은 앱 안에서 계정 삭제도 제공해야
+  /// 한다. 서버 탈퇴 API 는 아직 백엔드 스펙 확정 전이라, 지금은 확인 후
+  /// 로컬 세션만 정리하고 로그인 화면으로 되돌린다.
+  void _confirmDeleteAccount() {
+    AppDialog.show<void>(
+      context,
+      title: '정말 탈퇴하시겠어요?',
+      description: '탈퇴하면 저장한 코스, 후기, 좋아요 등 모든 데이터가 삭제되며 '
+          '복구할 수 없어요.',
+      actions: [
+        Builder(
+          builder: (dialogContext) => TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('취소'),
+          ),
+        ),
+        Builder(
+          builder: (dialogContext) => FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              _deleteAccount();
+            },
+            child: const Text('탈퇴하기'),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _deleteAccount() async {
+    // TODO(backend): 서버 탈퇴 API(예: DELETE /users/me)가 확정되면 여기서
+    // 호출한 뒤 세션을 정리한다. 지금은 로컬 세션 정리만 수행한다.
+    await ref.read(authProvider.notifier).logout();
+    if (!mounted) return;
+    ref.read(mainTabProvider.notifier).switchTab('home');
+    context.pushAndRemoveAll(const LoginPage());
   }
 
   Future<void> _pickOption({
@@ -265,12 +307,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             rows: [
               _SettingsRow(
                 label: '이용약관',
-                onTap: () => _comingSoon('이용약관'),
+                onTap: () => context.push(const PolicyPage.terms()),
                 trailing: const _Chevron(),
               ),
               _SettingsRow(
                 label: '개인정보처리방침',
-                onTap: () => _comingSoon('개인정보처리방침'),
+                onTap: () => context.push(const PolicyPage.privacy()),
                 trailing: const _Chevron(),
               ),
               _SettingsRow(
@@ -290,6 +332,16 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               color: AppColors.textBrand,
             ),
             onPressed: _confirmLogout,
+          ),
+          const SizedBox(height: AppSpacing.space3),
+          // 계정 삭제 진입점. 스토어(구글 플레이 계정 삭제 요건) 심사 대응을
+          // 위해 로그아웃과 나란히, 눈에 띄는 위치에 둔다.
+          Center(
+            child: AppTextLink(
+              label: '회원탈퇴',
+              tone: AppTextLinkTone.plain,
+              onTap: _confirmDeleteAccount,
+            ),
           ),
         ],
       ),
