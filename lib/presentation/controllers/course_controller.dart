@@ -175,6 +175,7 @@ class CourseNotifier extends Notifier<CourseState> {
   void togglePlace(String placeId) {
     final ids = [...state.selectedPlaceIds];
     if (!ids.remove(placeId)) ids.add(placeId);
+    _optimizeRevision++;
     state = state.copyWith(selectedPlaceIds: ids);
   }
 

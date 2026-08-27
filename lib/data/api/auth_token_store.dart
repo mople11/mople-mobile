@@ -36,6 +36,14 @@ abstract final class AuthTokenStore {
   static const _logoutMarkerKey = 'auth_logged_out';
   static const _logoutMarkerFileName = 'auth_logout_pending';
 
+  /// 저장 레코드의 필드. 세션과 **저장 시각**을 함께 적는다.
+  ///
+  /// 로그아웃 표시 제거가 실패해 표시가 남을 수 있다. 그때 표시만 보고 막으면
+  /// 방금 로그인한 세션까지 복원되지 않는다. 표시에도 시각을 새겨, 세션이 그
+  /// 로그아웃보다 **나중에** 저장됐으면 살린다.
+  static const _savedAtField = 'savedAt';
+  static const _sessionField = 'session';
+
   static AuthSession? _session;
 
   /// 이번 프로세스에서 삭제가 실패한 적이 있으면 true.
@@ -67,7 +75,10 @@ abstract final class AuthTokenStore {
     try {
       await _storage.write(
         key: _sessionKey,
-        value: jsonEncode(session.toJson()),
+        value: jsonEncode({
+          _savedAtField: DateTime.now().microsecondsSinceEpoch,
+          _sessionField: session.toJson(),
+        }),
       );
       persisted = true;
     } catch (e) {
@@ -79,7 +90,12 @@ abstract final class AuthTokenStore {
     // 쓰기가 실패했는데 표시까지 지우면, 저장소에 남아 있는 **이전 계정의**
     // 세션이 다음 실행에서 복원된다. 표시를 남겨 두면 그 복원이 막히고,
     // 이번 실행은 메모리 세션으로 정상 동작한다.
-    if (persisted) await _removeLogoutMarker();
+    if (!persisted) return;
+    // 표시를 못 지우면 다음 실행에서 방금 저장한 세션까지 막힌다. 한 번 더
+    // 시도하고, 그래도 남으면 위에 새긴 [_savedAtField] 가 구분해 준다.
+    if (await _removeLogoutMarker()) return;
+    if (await _removeLogoutMarker()) return;
+    debugPrint('[Auth] 로그아웃 표시가 남았지만 저장 시각으로 구분한다.');
   }
 
   /// 앱 시작 시 1회 호출해 저장된 세션을 메모리로 올린다.
@@ -91,9 +107,9 @@ abstract final class AuthTokenStore {
     }
     // 이전 실행에서 로그아웃이 끝나지 않았다면 세션이 남아 있을 수 있다.
     // 표시를 확인할 수 없는 경우도 복원하지 않는다(fail-closed).
-    final bool pending;
+    final int? loggedOutAt;
     try {
-      pending = await _hasLogoutMarker();
+      loggedOutAt = await _readLogoutMarker();
     } catch (e) {
       // 확인할 수 없으면 복원하지 않는다. 다만 세션을 지우지는 않는다 —
       // 일시적인 저장소 오류로 멀쩡한 세션을 날려 강제 로그아웃시키지 않기
@@ -102,18 +118,28 @@ abstract final class AuthTokenStore {
       debugPrint('[Auth] 로그아웃 표시를 읽지 못해 세션을 복원하지 않습니다: $e');
       return null;
     }
-    if (pending) {
-      debugPrint('[Auth] 완료되지 않은 로그아웃이 있어 세션을 복원하지 않습니다.');
-      await _clearQuietly();
-      return null;
-    }
-
     try {
       final raw = await _storage.read(key: _sessionKey);
       if (raw == null || raw.isEmpty) return null;
       final decoded = jsonDecode(raw);
       if (decoded is! Map) return null;
-      final session = AuthSession.fromJson(asMap(decoded));
+      final record = asMap(decoded);
+      // 예전 형식(세션 JSON 만 저장)은 시각을 모르므로 0 으로 본다 —
+      // 표시가 남아 있으면 복원하지 않는다.
+      final savedAt = record[_savedAtField] is int
+          ? record[_savedAtField] as int
+          : 0;
+      final sessionJson = record[_sessionField] == null
+          ? record
+          : asMap(record[_sessionField]);
+
+      if (loggedOutAt != null && savedAt <= loggedOutAt) {
+        debugPrint('[Auth] 완료되지 않은 로그아웃이 있어 세션을 복원하지 않습니다.');
+        await _clearQuietly();
+        return null;
+      }
+
+      final session = AuthSession.fromJson(sessionJson);
       // 토큰이 비어 있으면 쓸 수 없는 세션이라 지운다(삭제 실패 시의 덮어쓴 값 포함).
       if (session.accessToken.isEmpty) {
         await _clearQuietly();
@@ -207,18 +233,19 @@ abstract final class AuthTokenStore {
   // ── 로그아웃 표시 ─────────────────────────────────────────
   // 보안 저장소와 파일 두 곳에 남긴다. 한쪽이 실패해도 다른 쪽이 근거로 남는다.
 
-  /// 최소 한 곳에 표시를 남겼으면 true.
+  /// 최소 한 곳에 표시를 남겼으면 true. 값으로 **로그아웃 시각**을 적는다.
   static Future<bool> _writeLogoutMarker() async {
+    final stamp = '${DateTime.now().microsecondsSinceEpoch}';
     var marked = false;
     try {
-      await _storage.write(key: _logoutMarkerKey, value: '1');
+      await _storage.write(key: _logoutMarkerKey, value: stamp);
       marked = true;
     } catch (e) {
       debugPrint('[Auth] 로그아웃 표시 기록 실패(보안 저장소): $e');
     }
     try {
       final file = await _logoutMarkerFile();
-      await file.writeAsString('1', flush: true);
+      await file.writeAsString(stamp, flush: true);
       marked = true;
     } catch (e) {
       debugPrint('[Auth] 로그아웃 표시 기록 실패(파일): $e');
@@ -232,43 +259,60 @@ abstract final class AuthTokenStore {
   /// 표시는 한쪽에만 기록됐을 수 있어서(기록도 한쪽이 실패할 수 있다), 읽지 못한
   /// 저장소에 표시가 있었는지 알 수 없다. 나머지 한 곳이 "표시 없음"이라고
   /// 해서 로그아웃이 없었다고 단정하면 남아 있는 세션이 되살아난다.
-  static Future<bool> _hasLogoutMarker() async {
+  /// 가장 나중의 로그아웃 시각. 표시가 없으면 null.
+  ///
+  /// 값을 읽을 수 없는 옛 표시('1')는 [_unknownLogoutAt] 로 본다 — 어떤 저장
+  /// 시각보다 크게 잡아 복원을 막는다.
+  static Future<int?> _readLogoutMarker() async {
     Object? storageError;
     Object? fileError;
-    var found = false;
+    int? latest;
+
+    void collect(String? value) {
+      if (value == null || value.isEmpty) return;
+      final parsed = int.tryParse(value) ?? _unknownLogoutAt;
+      if (latest == null || parsed > latest!) latest = parsed;
+    }
 
     try {
-      final value = await _storage.read(key: _logoutMarkerKey);
-      if (value != null && value.isNotEmpty) found = true;
+      collect(await _storage.read(key: _logoutMarkerKey));
     } catch (e) {
       storageError = e;
     }
     try {
       final file = await _logoutMarkerFile();
-      if (file.existsSync()) found = true;
+      if (file.existsSync()) collect(await file.readAsString());
     } catch (e) {
       fileError = e;
     }
 
-    if (found) return true;
+    if (latest != null) return latest;
     if (storageError != null || fileError != null) {
       throw StateError('로그아웃 표시 확인 실패: $storageError / $fileError');
     }
-    return false;
+    return null;
   }
 
-  static Future<void> _removeLogoutMarker() async {
+  /// 시각을 알 수 없는 표시를 나타내는 값.
+  static const _unknownLogoutAt = 1 << 62;
+
+  /// 양쪽 모두 지웠으면 true. 호출부가 재시도할 수 있게 결과를 돌려준다.
+  static Future<bool> _removeLogoutMarker() async {
+    var removed = true;
     try {
       await _storage.delete(key: _logoutMarkerKey);
     } catch (e) {
+      removed = false;
       debugPrint('[Auth] 로그아웃 표시 제거 실패(보안 저장소): $e');
     }
     try {
       final file = await _logoutMarkerFile();
       if (file.existsSync()) await file.delete();
     } catch (e) {
+      removed = false;
       debugPrint('[Auth] 로그아웃 표시 제거 실패(파일): $e');
     }
+    return removed;
   }
 
   static Future<File> _logoutMarkerFile() async {

@@ -173,24 +173,22 @@ class MyPageNotifier extends Notifier<MyPageState> {
     state = state.copyWith(profileUpdate: result);
 
     final ok = !result.hasError;
-    if (ok) {
-      final current = state.summary?.value;
-      if (current == null) {
-        // 저장 시점에 요약이 아직 없었으면(로딩 중이었으면) 병합할 대상이 없다.
-        // 화면이 빈 채로 남지 않도록 최신 프로필을 다시 불러온다.
-        await loadSummary();
-      } else {
-        state = state.copyWith(
-          summary: AsyncData(
-            current.copyWith(
-              profile: current.profile.copyWith(
-                nickname: request.nickname,
-                profileImg: request.profileImg,
-              ),
+    final current = state.summary?.value;
+    if (current == null) {
+      // 저장 시점에 요약이 로딩 중이었으면 위에서 올린 revision 때문에 그 응답이
+      // 버려진다. 성공이든 실패든 다시 불러오지 않으면 화면이 로딩에 갇힌다.
+      await loadSummary();
+    } else if (ok) {
+      state = state.copyWith(
+        summary: AsyncData(
+          current.copyWith(
+            profile: current.profile.copyWith(
+              nickname: request.nickname,
+              profileImg: request.profileImg,
             ),
           ),
-        );
-      }
+        ),
+      );
     }
     return ok;
   }
